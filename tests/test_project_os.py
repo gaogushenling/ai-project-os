@@ -422,6 +422,33 @@ class ProjectOsTests(unittest.TestCase):
         ]:
             self.assertIn(expected, readme_zh)
 
+    def test_readmes_embed_the_same_realtime_star_history_chart(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readme_zh = (ROOT / "README_zh.md").read_text(encoding="utf-8")
+        chart_link = (
+            '<a href="https://www.star-history.com/'
+            '?repos=gaogushenling%2Fai-project-os&type=date&legend=top-left">'
+        )
+        chart_url = (
+            "https://api.star-history.com/chart?"
+            "repos=gaogushenling/ai-project-os&type=date"
+        )
+
+        for document in [readme, readme_zh]:
+            self.assertNotIn("img.shields.io/github/stars", document)
+            self.assertEqual(1, document.count("## Star History"))
+            self.assertEqual(1, document.count(chart_link))
+            self.assertEqual(3, document.count(chart_url))
+            self.assertEqual(3, document.count("sealed_token="))
+            self.assertIn('media="(prefers-color-scheme: dark)"', document)
+            self.assertIn('media="(prefers-color-scheme: light)"', document)
+            self.assertIn('<img alt="Star History Chart"', document)
+            self.assertLess(document.index("## Star History"), document.index("## License"))
+
+        star_history = readme.split("## Star History", 1)[1].split("## License", 1)[0]
+        star_history_zh = readme_zh.split("## Star History", 1)[1].split("## License", 1)[0]
+        self.assertEqual(star_history, star_history_zh)
+
     def test_repository_instructions_define_safe_ai_adoption(self) -> None:
         instructions_path = ROOT / "AGENTS.md"
         self.assertTrue(instructions_path.is_file(), "missing repository AI instructions")

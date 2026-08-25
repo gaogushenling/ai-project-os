@@ -186,6 +186,16 @@ tests/        behavior tests
 
 Documentation is bilingual with English as the default; Chinese translations live alongside as `*_zh.md` files (`README_zh.md`, `SKILL_zh.md`, `references/recommended-integrations_zh.md`).
 
+## Star History
+
+<a href="https://www.star-history.com/?repos=gaogushenling%2Fai-project-os&type=date&legend=top-left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=gaogushenling/ai-project-os&type=date&theme=dark&legend=top-left&sealed_token=9G4fb-eCWzn_NBCAy8Fsu4BuRim5PbP1e6baTL7ZXxgMm0D1gE0MpzfAvLfhyb4CznPWPTlz0mxNjbHtD1NbKZx1jAgDSsdVXplkc6fMVxQdEumGVzIUKkyva1deGFKnXFoBPdjlparaS0HJlDEyp34dFOW-ElIMVW1fpfvTLT6pOebpkgMdOm5D5okV" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=gaogushenling/ai-project-os&type=date&legend=top-left&sealed_token=9G4fb-eCWzn_NBCAy8Fsu4BuRim5PbP1e6baTL7ZXxgMm0D1gE0MpzfAvLfhyb4CznPWPTlz0mxNjbHtD1NbKZx1jAgDSsdVXplkc6fMVxQdEumGVzIUKkyva1deGFKnXFoBPdjlparaS0HJlDEyp34dFOW-ElIMVW1fpfvTLT6pOebpkgMdOm5D5okV" />
+    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=gaogushenling/ai-project-os&type=date&legend=top-left&sealed_token=9G4fb-eCWzn_NBCAy8Fsu4BuRim5PbP1e6baTL7ZXxgMm0D1gE0MpzfAvLfhyb4CznPWPTlz0mxNjbHtD1NbKZx1jAgDSsdVXplkc6fMVxQdEumGVzIUKkyva1deGFKnXFoBPdjlparaS0HJlDEyp34dFOW-ElIMVW1fpfvTLT6pOebpkgMdOm5D5okV" />
+  </picture>
+</a>
+
 ## License
 
 Apache-2.0
