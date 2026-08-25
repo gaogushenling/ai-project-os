@@ -16,7 +16,9 @@ SELF_CHECK_SCRIPT = ROOT / "scripts" / "self_check.py"
 
 CORE_FILES = {
     "AGENTS.md",
-    ".codex/skills/project-memory/SKILL.md",
+    ".agents/skills/project-memory/SKILL.md",
+    "docs/ai/capabilities.json",
+    "docs/ai/capabilities.lock.json",
     "docs/ai/project.json",
     "docs/ai/routes.json",
     "docs/ai/memory.json",
@@ -29,7 +31,13 @@ def load_module(path: Path, name: str):
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Cannot load {path}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    # dataclasses and similar machinery look up cls.__module__ in sys.modules.
+    sys.modules[name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        sys.modules.pop(name, None)
+        raise
     return module
 
 
@@ -71,10 +79,22 @@ class ProjectOsTests(unittest.TestCase):
             project = json.loads((target / "docs/ai/project.json").read_text(encoding="utf-8"))
             routes = json.loads((target / "docs/ai/routes.json").read_text(encoding="utf-8"))
             memory = json.loads((target / "docs/ai/memory.json").read_text(encoding="utf-8"))
+            capabilities = json.loads(
+                (target / "docs/ai/capabilities.json").read_text(encoding="utf-8")
+            )
+            capability_lock = json.loads(
+                (target / "docs/ai/capabilities.lock.json").read_text(encoding="utf-8")
+            )
             self.assertEqual("customer-portal", project["project"]["name"])
             self.assertEqual(1, project["schema_version"])
             self.assertEqual(1, routes["schema_version"])
             self.assertEqual(1, memory["schema_version"])
+            self.assertEqual("project", capabilities["default_scope"])
+            self.assertEqual(".agents/skills", capabilities["skill_directory"])
+            self.assertEqual(".codex/config.toml", capabilities["mcp_config"])
+            self.assertEqual([], capabilities["capabilities"])
+            self.assertEqual("project", capability_lock["scope"])
+            self.assertEqual([], capability_lock["capabilities"])
             self.assertIn("develop", routes["routes"])
             self.assertEqual([], memory["tool_failures"])
 
@@ -95,20 +115,30 @@ class ProjectOsTests(unittest.TestCase):
             self.assertNotIn("docs\\ai\\project.json", result.stdout)
             self.assertFalse(target.exists())
 
-    def test_existing_files_are_preserved_unless_force_is_explicit(self) -> None:
+    def test_existing_files_are_preserved_and_state_files_survive_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp)
             project = target / "docs/ai/project.json"
             project.parent.mkdir(parents=True)
             project.write_text('{"keep": true}\n', encoding="utf-8")
+            agreement = target / "AGENTS.md"
+            agreement.write_text("user file\n", encoding="utf-8")
 
             first = self.init(target)
+            # Existing state files are protected; other existing files are skipped.
+            self.assertIn("protected", first.stdout.lower())
             self.assertIn("skipped", first.stdout.lower())
             self.assertEqual({"keep": True}, json.loads(project.read_text(encoding="utf-8")))
+            self.assertEqual("user file\n", agreement.read_text(encoding="utf-8"))
 
             forced = self.init(target, "--force")
+            self.assertIn("protected", forced.stdout.lower())
+            # Filled project data survives even --force.
+            self.assertEqual({"keep": True}, json.loads(project.read_text(encoding="utf-8")))
+            # Template and protocol files are still refreshable with --force.
             self.assertIn("overwritten", forced.stdout.lower())
-            self.assertIn("project", json.loads(project.read_text(encoding="utf-8")))
+            self.assertNotEqual("user file\n", agreement.read_text(encoding="utf-8"))
+            self.assertIn("AI collaboration", agreement.read_text(encoding="utf-8"))
 
     def test_gitignore_update_is_idempotent_and_preserves_user_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -125,6 +155,7 @@ class ProjectOsTests(unittest.TestCase):
             self.assertTrue(first.startswith("dist/\n"))
             self.assertIn("# AI Project OS: local-only files", first)
             self.assertIn(".codex/local/", first)
+            self.assertIn(".agents/local/", first)
             self.assertIn("!.env.example", first)
 
     def test_initializer_rejects_sensitive_template_assets(self) -> None:
@@ -338,8 +369,118 @@ class ProjectOsTests(unittest.TestCase):
         self.assertNotIn("git push", portable_text)
         self.assertNotIn("commit message", portable_text)
 
+    def test_secret_patterns_come_from_one_shared_definition(self) -> None:
+        common = load_module(ROOT / "scripts" / "_common.py", "common_secret_patterns")
+        init_module = load_module(INIT_SCRIPT, "init_secret_patterns")
+        validate_module = load_module(VALIDATE_SCRIPT, "validate_secret_patterns")
+        installer = load_module(
+            ROOT / "scripts" / "install_project_integration.py",
+            "installer_secret_patterns",
+        )
+
+        def signature(patterns) -> list[tuple[str, int]]:
+            return sorted((pattern.pattern, pattern.flags) for pattern in patterns)
+
+        self.assertEqual(signature(common.SECRET_PATTERNS), signature(init_module.SECRET_PATTERNS))
+        self.assertEqual(signature(common.SECRET_PATTERNS), signature(validate_module.SECRET_PATTERNS))
+        self.assertEqual(signature(common.CLI_SECRET_PATTERNS), signature(installer.CLI_SECRET_PATTERNS))
+
+    def test_validator_gitignore_rules_stay_in_sync_with_the_asset(self) -> None:
+        validate_module = load_module(VALIDATE_SCRIPT, "validate_gitignore_rules")
+        asset = (ROOT / "assets" / "project-os" / ".gitignore.append").read_text(encoding="utf-8")
+        asset_rules = tuple(
+            line.strip()
+            for line in asset.splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        )
+
+        self.assertEqual(tuple(validate_module.GITIGNORE_RULES), asset_rules)
+
+    def test_validator_accepts_project_declared_paths_and_rejects_unsafe_ones(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "declared"
+            self.init(target)
+            capabilities_path = target / "docs/ai/capabilities.json"
+            capabilities = json.loads(capabilities_path.read_text(encoding="utf-8"))
+            capabilities["skill_directory"] = ".claude/skills"
+            capabilities["mcp_config"] = ".claude/mcp.toml"
+            capabilities_path.write_text(json.dumps(capabilities), encoding="utf-8")
+
+            accepted = self.run_script(
+                VALIDATE_SCRIPT, "--target", str(target), "--format", "json"
+            )
+            accepted_payload = json.loads(accepted.stdout)
+            self.assertEqual("pass", accepted_payload["status"])
+            self.assertFalse(
+                any(item["code"] == "capability-path-invalid" for item in accepted_payload["findings"])
+            )
+
+            capabilities["mcp_config"] = "../outside.toml"
+            capabilities_path.write_text(json.dumps(capabilities), encoding="utf-8")
+            rejected = self.run_script(
+                VALIDATE_SCRIPT, "--target", str(target), "--format", "json", check=False
+            )
+            rejected_payload = json.loads(rejected.stdout)
+            self.assertTrue(
+                any(item["code"] == "capability-path-invalid" for item in rejected_payload["findings"])
+            )
+
+    def test_validator_enforces_memory_entry_contract_and_expiry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "memory-hygiene"
+            self.init(target)
+            memory_path = target / "docs/ai/memory.json"
+            memory = json.loads(memory_path.read_text(encoding="utf-8"))
+            memory["tool_failures"] = [{"id": "broken-tool", "evidence": "exit 1"}]
+            memory_path.write_text(json.dumps(memory), encoding="utf-8")
+
+            contract = self.run_script(
+                VALIDATE_SCRIPT, "--target", str(target), "--format", "json", check=False
+            )
+            contract_payload = json.loads(contract.stdout)
+            self.assertTrue(
+                any(item["code"] == "memory-entry-contract" for item in contract_payload["findings"])
+            )
+
+            memory["tool_failures"][0].update(
+                {"resolution": "fixed", "verified_at": "2026-08-25"}
+            )
+            memory["corrections"] = [
+                {
+                    "id": "stale-decision",
+                    "evidence": "old approach",
+                    "resolution": "superseded",
+                    "verified_at": "2026-08-25",
+                    "expires_at": "2020-01-01",
+                }
+            ]
+            memory_path.write_text(json.dumps(memory), encoding="utf-8")
+
+            expiry = self.run_script(
+                VALIDATE_SCRIPT, "--target", str(target), "--format", "json"
+            )
+            expiry_payload = json.loads(expiry.stdout)
+            self.assertEqual("pass", expiry_payload["status"])
+            self.assertTrue(
+                any(item["code"] == "memory-entry-expired" for item in expiry_payload["findings"])
+            )
+            self.assertFalse(
+                any(item["code"] == "memory-entry-contract" for item in expiry_payload["findings"])
+            )
+
+            memory["corrections"][0]["expires_at"] = "not-a-date"
+            memory_path.write_text(json.dumps(memory), encoding="utf-8")
+            invalid_date = self.run_script(
+                VALIDATE_SCRIPT, "--target", str(target), "--format", "json", check=False
+            )
+            invalid_payload = json.loads(invalid_date.stdout)
+            self.assertTrue(
+                any(item["code"] == "memory-entry-contract" for item in invalid_payload["findings"])
+            )
+
     def test_self_check_exercises_the_complete_package(self) -> None:
         result = self.run_script(SELF_CHECK_SCRIPT)
+        self.assertIn("PROJECT INTEGRATIONS CHECKED", result.stdout)
         self.assertIn("SELF CHECK PASSED", result.stdout)
 
 

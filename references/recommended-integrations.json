@@ -1,0 +1,744 @@
+{
+  "catalog_version": 4,
+  "verified_on": "2026-08-25",
+  "display_order": ["skill_projects", "mcp_servers"],
+  "policy": {
+    "recommendation_unit": "repository",
+    "accepted_license_kinds": ["open-source", "source-available"],
+    "auto_install": false,
+    "auto_enable": false,
+    "default_install_scope": "project",
+    "install_all": false,
+    "default_skill_directory": ".agents/skills",
+    "default_mcp_config": ".codex/config.toml",
+    "project_manifest": "docs/ai/capabilities.json",
+    "project_lock": "docs/ai/capabilities.lock.json",
+    "global_install_requires_explicit_opt_in": true,
+    "reverify_before_install": true,
+    "selection_order": ["current_user_intent", "project_evidence", "risk_tier"],
+    "admission_rule": "Only list maintained integrations with a public source repository, explicit license terms, an identifiable maintainer, and a directly inspectable implementation path.",
+    "license_rule": "Label every recommendation as open-source or source-available and preserve the exact current license name and URL. Source visibility does not imply unrestricted use.",
+    "repository_rule": "Keep one top-level recommendation per public source repository. List selected capabilities as child entries instead of duplicating repository metadata.",
+    "overlap_rule": "When capabilities overlap, recommend the smallest sufficient option. Do not enable competing deployment integrations together.",
+    "high_impact_rule": "Credentials, external writes, and production actions require explicit user selection and confirmation at execution time.",
+    "installation_rule": "Do not install recommendations automatically. After explicit user selection, install or configure the minimum required capability at project scope, record it in the project manifest and lock, and never commit credential values."
+  },
+  "tier_definitions": {
+    "baseline": "Generally useful and safe to show, but still never installed or enabled automatically.",
+    "scenario": "Show only when the user's request or concrete project evidence matches the stated scenario.",
+    "production-risk": "Show only for an explicit production or external-service goal; execution requires confirmation."
+  },
+  "skill_projects": [
+    {
+      "id": "superpowers",
+      "name": "Superpowers",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "Jesse Vincent and Prime Radiant",
+      "repository_url": "https://github.com/obra/superpowers",
+      "source_url": "https://github.com/obra/superpowers",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/obra/superpowers/blob/main/LICENSE",
+      "recommend_when": ["A coherent engineering workflow is needed across planning, implementation, debugging, review, verification, and branch completion."],
+      "avoid_when": ["The project already enforces an equivalent workflow or only one already-available narrow capability is needed."],
+      "impacts": ["local-read", "local-write"],
+      "tags": ["workflow", "planning", "debugging", "testing", "review", "verification", "git"],
+      "recommended_skills": [
+        {
+          "id": "verification-before-completion",
+          "name": "Verification Before Completion",
+          "source_url": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
+          "tier": "baseline",
+          "recommend_when": ["Completion claims need fresh engineering evidence."],
+          "avoid_when": ["An equivalent verification gate is already enforced."],
+          "impacts": ["local-read"],
+          "tags": ["verification", "quality", "delivery"]
+        },
+        {
+          "id": "systematic-debugging",
+          "name": "Systematic Debugging",
+          "source_url": "https://github.com/obra/superpowers/tree/main/skills/systematic-debugging",
+          "tier": "scenario",
+          "recommend_when": ["A reproducible defect, failed test, or unexplained behavior needs root-cause analysis."],
+          "avoid_when": ["There is no defect or unexpected behavior to investigate."],
+          "impacts": ["local-read"],
+          "tags": ["debugging", "root-cause", "quality"]
+        },
+        {
+          "id": "test-driven-development",
+          "name": "Test-Driven Development",
+          "source_url": "https://github.com/obra/superpowers/tree/main/skills/test-driven-development",
+          "tier": "scenario",
+          "recommend_when": ["The project has an executable test boundary and the change can be described through observable behavior."],
+          "avoid_when": ["No meaningful automated test boundary exists yet."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["testing", "tdd", "quality"]
+        },
+        {
+          "id": "writing-plans",
+          "name": "Writing Plans",
+          "source_url": "https://github.com/obra/superpowers/tree/main/skills/writing-plans",
+          "tier": "scenario",
+          "recommend_when": ["A clear multi-step requirement needs an executable implementation plan."],
+          "avoid_when": ["The change is small enough to implement and verify directly."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["planning", "workflow"]
+        },
+        {
+          "id": "executing-plans",
+          "name": "Executing Plans",
+          "source_url": "https://github.com/obra/superpowers/tree/main/skills/executing-plans",
+          "tier": "scenario",
+          "recommend_when": ["An approved written plan should be executed with review checkpoints."],
+          "avoid_when": ["There is no approved plan or the work is a single small step."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["execution", "planning", "workflow"]
+        },
+        {
+          "id": "receiving-code-review",
+          "name": "Receiving Code Review",
+          "source_url": "https://github.com/obra/superpowers/tree/main/skills/receiving-code-review",
+          "tier": "scenario",
+          "recommend_when": ["Review feedback needs technical validation before changes are applied."],
+          "avoid_when": ["No review feedback is being processed."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["review", "quality"]
+        },
+        {
+          "id": "using-git-worktrees",
+          "name": "Using Git Worktrees",
+          "source_url": "https://github.com/obra/superpowers/tree/main/skills/using-git-worktrees",
+          "tier": "scenario",
+          "recommend_when": ["Long-running or parallel feature work needs an isolated workspace."],
+          "avoid_when": ["The workspace is already isolated or the change is narrow and immediate."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["git", "worktree", "isolation"]
+        },
+        {
+          "id": "finishing-a-development-branch",
+          "name": "Finishing a Development Branch",
+          "source_url": "https://github.com/obra/superpowers/tree/main/skills/finishing-a-development-branch",
+          "tier": "scenario",
+          "recommend_when": ["Completed work needs a merge, pull request, retention, or cleanup decision."],
+          "avoid_when": ["Implementation or verification is still incomplete."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["git", "delivery", "workflow"]
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "terminal-skills",
+      "name": "Terminal Skills",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "TerminalSkills",
+      "repository_url": "https://github.com/TerminalSkills/skills",
+      "source_url": "https://github.com/TerminalSkills/skills",
+      "license_id": "Apache-2.0",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/TerminalSkills/skills/blob/main/LICENSE",
+      "recommend_when": ["A concrete infrastructure or database task matches one of the repository's focused skills."],
+      "avoid_when": ["The task does not match a selected skill or project-local instructions are stronger."],
+      "impacts": ["local-read", "local-write"],
+      "tags": ["docker", "sql", "database", "performance"],
+      "recommended_skills": [
+        {
+          "id": "docker-helper",
+          "name": "Docker Helper",
+          "source_url": "https://github.com/TerminalSkills/skills/tree/main/skills/docker-helper",
+          "tier": "scenario",
+          "recommend_when": ["The project needs a Dockerfile, Compose configuration, image optimization, or container debugging."],
+          "avoid_when": ["The project does not use containers."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["docker", "containers"]
+        },
+        {
+          "id": "sql-optimizer",
+          "name": "SQL Optimizer",
+          "source_url": "https://github.com/TerminalSkills/skills/tree/main/skills/sql-optimizer",
+          "tier": "scenario",
+          "recommend_when": ["A PostgreSQL, MySQL, or SQLite workload has a slow query, index, execution-plan, or N+1 problem."],
+          "avoid_when": ["There is no query evidence or database performance problem to analyze."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["sql", "database", "performance"]
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "ui-ux-pro-max",
+      "name": "UI/UX Pro Max",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "Next Level Builder",
+      "repository_url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "source_url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/main/LICENSE",
+      "recommend_when": ["A Web or mobile product needs visual direction, a design system, or stack-specific UI guidance."],
+      "avoid_when": ["The task has no user interface or an established design system is the stronger source of truth."],
+      "impacts": ["local-read"],
+      "tags": ["ui", "ux", "design-system", "frontend", "mobile"],
+      "recommended_skills": [
+        {
+          "id": "ui-ux-pro-max",
+          "name": "UI/UX Pro Max",
+          "source_url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/main/.claude/skills/ui-ux-pro-max",
+          "tier": "scenario",
+          "recommend_when": ["A new interface needs design-system generation or focused visual and UX guidance."],
+          "avoid_when": ["Only a narrow accessibility audit is needed."],
+          "impacts": ["local-read"],
+          "tags": ["ui", "ux", "design-system", "frontend"]
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "openspec",
+      "name": "OpenSpec",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "Fission AI",
+      "repository_url": "https://github.com/Fission-AI/OpenSpec",
+      "source_url": "https://github.com/Fission-AI/OpenSpec",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/Fission-AI/OpenSpec/blob/main/LICENSE",
+      "recommend_when": ["The user explicitly adopts spec-driven development or the project already contains an OpenSpec workspace."],
+      "avoid_when": ["The project does not want OpenSpec's specification files, state, and CLI workflow."],
+      "impacts": ["local-read", "local-write"],
+      "tags": ["specification", "sdd", "workflow", "change-management"],
+      "recommended_skills": [
+        {
+          "id": "openspec-propose",
+          "name": "OpenSpec Propose",
+          "source_url": "https://github.com/Fission-AI/OpenSpec/tree/main/skills/openspec-propose",
+          "tier": "scenario",
+          "recommend_when": ["A proposed change needs specification artifacts before implementation."],
+          "avoid_when": ["OpenSpec has not been adopted for the project."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["specification", "proposal", "sdd"]
+        },
+        {
+          "id": "openspec-apply-change",
+          "name": "OpenSpec Apply Change",
+          "source_url": "https://github.com/Fission-AI/OpenSpec/tree/main/skills/openspec-apply-change",
+          "tier": "scenario",
+          "recommend_when": ["An approved OpenSpec change is ready for implementation."],
+          "avoid_when": ["There is no approved OpenSpec change."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["specification", "implementation", "sdd"]
+        },
+        {
+          "id": "openspec-verify-change",
+          "name": "OpenSpec Verify Change",
+          "source_url": "https://github.com/Fission-AI/OpenSpec/tree/main/skills/openspec-verify-change",
+          "tier": "scenario",
+          "recommend_when": ["An implemented OpenSpec change needs consistency and completion checks."],
+          "avoid_when": ["There is no implemented OpenSpec change to verify."],
+          "impacts": ["local-read"],
+          "tags": ["specification", "verification", "sdd"]
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "vercel-agent-skills",
+      "name": "Vercel Agent Skills",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "Vercel Labs",
+      "repository_url": "https://github.com/vercel-labs/agent-skills",
+      "source_url": "https://github.com/vercel-labs/agent-skills",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/vercel-labs/agent-skills#license",
+      "recommend_when": ["A React or Next.js project needs implementation guidance, Web design review, or an explicitly selected Vercel deployment workflow."],
+      "avoid_when": ["The project is outside the supported Web scenarios or project-native conventions are stronger."],
+      "impacts": ["local-read", "external-write", "production-write"],
+      "tags": ["react", "nextjs", "frontend", "accessibility", "deployment", "vercel"],
+      "recommended_skills": [
+        {
+          "id": "react-best-practices",
+          "name": "React Best Practices",
+          "source_url": "https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices",
+          "tier": "scenario",
+          "recommend_when": ["A React or Next.js task involves implementation or performance review."],
+          "avoid_when": ["The project is not React-based."],
+          "impacts": ["local-read"],
+          "tags": ["react", "nextjs", "frontend", "performance"]
+        },
+        {
+          "id": "web-design-guidelines",
+          "name": "Web Design Guidelines",
+          "source_url": "https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines",
+          "tier": "scenario",
+          "recommend_when": ["A Web interface needs an accessibility, usability, or frontend quality review."],
+          "avoid_when": ["The task has no user interface."],
+          "impacts": ["local-read"],
+          "tags": ["web", "frontend", "accessibility", "ux"]
+        },
+        {
+          "id": "deploy-to-vercel",
+          "name": "Deploy to Vercel",
+          "source_url": "https://github.com/vercel-labs/agent-skills/tree/main/skills/deploy-to-vercel",
+          "tier": "production-risk",
+          "recommend_when": ["The user explicitly selects Vercel and asks to publish a Web project."],
+          "avoid_when": ["The provider is undecided, another provider is selected, or source upload is not approved."],
+          "impacts": ["local-read", "external-write", "production-write"],
+          "tags": ["deployment", "vercel", "web"],
+          "exclusive_group": "deployment-provider"
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "cloudflare-skills",
+      "name": "Cloudflare Skills",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "Cloudflare",
+      "repository_url": "https://github.com/cloudflare/skills",
+      "source_url": "https://github.com/cloudflare/skills",
+      "license_id": "Apache-2.0",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/cloudflare/skills/blob/main/LICENSE",
+      "recommend_when": ["A Web project has a measurable performance goal or explicitly targets Cloudflare Workers."],
+      "avoid_when": ["There is no measurable performance problem and Cloudflare is not the selected platform."],
+      "impacts": ["local-read", "external-read", "external-write", "credentials-required", "production-write"],
+      "tags": ["web", "performance", "cloudflare", "workers", "deployment"],
+      "recommended_skills": [
+        {
+          "id": "cloudflare-web-perf",
+          "name": "Cloudflare Web Performance",
+          "source_url": "https://github.com/cloudflare/skills/tree/main/skills/web-perf",
+          "tier": "scenario",
+          "recommend_when": ["A runnable Web project has an explicit Core Web Vitals or page-load performance goal."],
+          "avoid_when": ["There is no measurable Web performance problem."],
+          "impacts": ["local-read", "external-read"],
+          "tags": ["web", "performance", "core-web-vitals", "cloudflare"]
+        },
+        {
+          "id": "cloudflare-wrangler",
+          "name": "Cloudflare Wrangler",
+          "source_url": "https://github.com/cloudflare/skills/tree/main/skills/wrangler",
+          "tier": "production-risk",
+          "recommend_when": ["The user explicitly selects Cloudflare and needs to deploy or manage Workers resources."],
+          "avoid_when": ["Another provider is selected or account changes are not approved."],
+          "impacts": ["local-read", "external-write", "credentials-required", "production-write"],
+          "tags": ["deployment", "cloudflare", "workers"],
+          "exclusive_group": "deployment-provider"
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "awesome-copilot",
+      "name": "Awesome GitHub Copilot",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "GitHub and community contributors",
+      "repository_url": "https://github.com/github/awesome-copilot",
+      "source_url": "https://github.com/github/awesome-copilot",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/github/awesome-copilot/blob/main/LICENSE",
+      "recommend_when": ["A specific repository-analysis, refactoring, quality, or coding-standards workflow is needed."],
+      "avoid_when": ["No specific child skill has been reviewed and selected; the repository is a large community collection and should not be installed wholesale."],
+      "impacts": ["local-read", "local-write"],
+      "tags": ["code-quality", "codebase", "refactoring", "standards", "review", "agent-safety"],
+      "recommended_skills": [
+        {
+          "id": "acquire-codebase-knowledge",
+          "name": "Acquire Codebase Knowledge",
+          "source_url": "https://github.com/github/awesome-copilot/tree/main/skills/acquire-codebase-knowledge",
+          "tier": "scenario",
+          "recommend_when": ["A team needs repository onboarding, architecture mapping, or durable codebase documentation."],
+          "avoid_when": ["The task is a narrow code change with no repository-level discovery goal."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["codebase", "architecture", "onboarding", "documentation"]
+        },
+        {
+          "id": "harness-engineering",
+          "name": "Harness Engineering",
+          "source_url": "https://github.com/github/awesome-copilot/tree/main/skills/harness-engineering",
+          "tier": "scenario",
+          "recommend_when": ["Repeated agent mistakes should become durable instructions, regression checks, and failure memory."],
+          "avoid_when": ["The repository already has an equivalent project-level AI control plane."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["agent-quality", "regression", "memory", "governance"]
+        },
+        {
+          "id": "refactor-plan",
+          "name": "Refactor Plan",
+          "source_url": "https://github.com/github/awesome-copilot/tree/main/skills/refactor-plan",
+          "tier": "scenario",
+          "recommend_when": ["A multi-file refactor needs investigation, scope control, sequencing, and approval before edits."],
+          "avoid_when": ["The refactor is small and local."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["refactoring", "planning", "code-quality"]
+        },
+        {
+          "id": "write-coding-standards-from-file",
+          "name": "Write Coding Standards From File",
+          "source_url": "https://github.com/github/awesome-copilot/tree/main/skills/write-coding-standards-from-file",
+          "tier": "scenario",
+          "recommend_when": ["Existing project conventions need to be extracted into an explicit coding standard."],
+          "avoid_when": ["The project already has an authoritative and current coding standard."],
+          "impacts": ["local-read", "local-write"],
+          "tags": ["standards", "code-quality", "documentation"]
+        },
+        {
+          "id": "verify-agent-action",
+          "name": "Verify Agent Action",
+          "source_url": "https://github.com/github/awesome-copilot/tree/main/skills/verify-agent-action",
+          "tier": "production-risk",
+          "recommend_when": ["A consequential action or approval packet needs validation before execution."],
+          "avoid_when": ["The action is read-only, local, and low risk."],
+          "impacts": ["local-read"],
+          "tags": ["agent-safety", "approval", "verification", "production"]
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "agent-skill-eval",
+      "name": "Agent Skill Eval",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "AWS Samples",
+      "repository_url": "https://github.com/aws-samples/sample-agent-skill-eval",
+      "source_url": "https://github.com/aws-samples/sample-agent-skill-eval",
+      "license_id": "MIT-0",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/aws-samples/sample-agent-skill-eval/blob/main/LICENSE",
+      "recommend_when": ["A third-party Skill is being considered, upgraded, compared, or checked for safety and trigger regressions."],
+      "avoid_when": ["No Skill installation or Skill development decision is being made."],
+      "impacts": ["local-read", "local-write", "external-read"],
+      "tags": ["skill-evaluation", "security", "quality", "regression", "token-cost"],
+      "recommended_skills": [
+        {
+          "id": "skill-eval",
+          "name": "Skill Eval",
+          "source_url": "https://github.com/aws-samples/sample-agent-skill-eval/blob/main/SKILL.md",
+          "tier": "scenario",
+          "recommend_when": ["A Skill needs static audit, functional evaluation, trigger testing, comparison, or regression tracking."],
+          "avoid_when": ["The required CLI has not been reviewed or the evaluation cost is not justified."],
+          "impacts": ["local-read", "local-write", "external-read"],
+          "tags": ["skill-evaluation", "security", "quality", "regression"]
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "sentry-agent-skills",
+      "name": "Sentry Agent Skills",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "Sentry",
+      "repository_url": "https://github.com/getsentry/sentry-agent-skills",
+      "source_url": "https://github.com/getsentry/sentry-agent-skills",
+      "license_id": "Apache-2.0",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/getsentry/sentry-agent-skills#license",
+      "recommend_when": ["The project uses Sentry and needs SDK setup, production issue diagnosis, or Sentry-assisted pull-request review."],
+      "avoid_when": ["The project does not use Sentry or required service access has not been approved."],
+      "impacts": ["local-read", "local-write", "external-read", "credentials-required", "production-read"],
+      "tags": ["sentry", "observability", "debugging", "code-review", "sdk"],
+      "recommended_skills": [
+        {
+          "id": "sentry-python-sdk",
+          "name": "Sentry Python SDK",
+          "source_url": "https://github.com/getsentry/sentry-agent-skills/tree/main/skills/sentry-python-sdk",
+          "tier": "scenario",
+          "recommend_when": ["A Python project needs Sentry SDK setup or configuration."],
+          "avoid_when": ["The project is not Python-based or does not use Sentry."],
+          "impacts": ["local-read", "local-write", "external-read"],
+          "tags": ["sentry", "python", "sdk", "observability"]
+        },
+        {
+          "id": "sentry-fix-issues",
+          "name": "Sentry Fix Issues",
+          "source_url": "https://github.com/getsentry/sentry-agent-skills/tree/main/skills/sentry-fix-issues",
+          "tier": "production-risk",
+          "recommend_when": ["A confirmed Sentry issue needs evidence-based diagnosis and a code fix."],
+          "avoid_when": ["Sentry production access is unavailable or not approved."],
+          "impacts": ["local-read", "local-write", "external-read", "credentials-required", "production-read"],
+          "tags": ["sentry", "debugging", "production", "observability"]
+        },
+        {
+          "id": "sentry-pr-code-review",
+          "name": "Sentry PR Code Review",
+          "source_url": "https://github.com/getsentry/sentry-agent-skills/tree/main/skills/sentry-pr-code-review",
+          "tier": "scenario",
+          "recommend_when": ["Sentry findings on a pull request need to be reviewed and resolved."],
+          "avoid_when": ["The repository has no Sentry-assisted pull-request findings."],
+          "impacts": ["local-read", "local-write", "external-read", "credentials-required"],
+          "tags": ["sentry", "code-review", "pull-requests"]
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "microsoft-skills",
+      "name": "Microsoft Skills",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "Microsoft",
+      "repository_url": "https://github.com/microsoft/skills",
+      "source_url": "https://github.com/microsoft/skills",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/microsoft/skills/blob/main/LICENSE",
+      "recommend_when": ["A project uses Microsoft SDKs, Azure, Microsoft Foundry, or needs guidance for building an MCP server."],
+      "avoid_when": ["The task is outside Microsoft technologies and MCP development."],
+      "impacts": ["local-read", "local-write", "external-read"],
+      "tags": ["microsoft", "azure", "foundry", "sdk", "mcp-development"],
+      "recommended_skills": [
+        {
+          "id": "mcp-builder",
+          "name": "MCP Builder",
+          "source_url": "https://github.com/microsoft/skills/tree/main/.github/skills/mcp-builder",
+          "tier": "scenario",
+          "recommend_when": ["An MCP server needs to be designed, implemented, or reviewed in Python, TypeScript, or .NET."],
+          "avoid_when": ["The task does not involve MCP server development."],
+          "impacts": ["local-read", "local-write", "external-read"],
+          "tags": ["mcp", "mcp-development", "python", "typescript", "dotnet"]
+        },
+        {
+          "id": "microsoft-sdk-skills",
+          "name": "Microsoft SDK Skills",
+          "source_url": "https://github.com/microsoft/skills/tree/main/.github/skills",
+          "tier": "scenario",
+          "recommend_when": ["A supported Microsoft SDK needs current language-specific implementation guidance."],
+          "avoid_when": ["No Microsoft SDK is present."],
+          "impacts": ["local-read", "external-read"],
+          "tags": ["microsoft", "azure", "sdk", "documentation"]
+        }
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "aws-agent-toolkit",
+      "name": "Agent Toolkit for AWS",
+      "type": "skill-project",
+      "tier": "scenario",
+      "maintainer": "Amazon Web Services",
+      "repository_url": "https://github.com/aws/agent-toolkit-for-aws",
+      "source_url": "https://github.com/aws/agent-toolkit-for-aws",
+      "license_id": "Apache-2.0",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/aws/agent-toolkit-for-aws/blob/main/LICENSE",
+      "recommend_when": ["A project builds, deploys, operates, or reviews workloads on AWS."],
+      "avoid_when": ["The project does not use AWS."],
+      "impacts": ["local-read", "local-write", "external-read"],
+      "tags": ["aws", "cloud", "architecture", "devsecops", "observability", "sdk"],
+      "recommended_skills": [
+        {
+          "id": "aws-skills",
+          "name": "AWS Skills Collection",
+          "source_url": "https://github.com/aws/agent-toolkit-for-aws/tree/main/skills",
+          "tier": "scenario",
+          "recommend_when": ["An AWS task needs official architecture, SDK, IaC, observability, cost, or security guidance."],
+          "avoid_when": ["No AWS workload or decision is involved."],
+          "impacts": ["local-read", "local-write", "external-read"],
+          "tags": ["aws", "cloud", "architecture", "devsecops", "sdk"]
+        }
+      ],
+      "status": "verified"
+    }
+  ],
+  "mcp_servers": [
+    {
+      "id": "playwright-mcp",
+      "name": "Playwright MCP",
+      "type": "mcp-server",
+      "tier": "scenario",
+      "maintainer": "Microsoft",
+      "repository_url": "https://github.com/microsoft/playwright-mcp",
+      "source_url": "https://github.com/microsoft/playwright-mcp",
+      "license_id": "Apache-2.0",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/microsoft/playwright-mcp/blob/main/LICENSE",
+      "recommend_when": ["A runnable Web application needs real browser interaction, screenshots, or end-to-end acceptance evidence."],
+      "avoid_when": ["The task is not Web-facing or static checks already provide the required evidence."],
+      "impacts": ["local-read", "local-write", "external-read", "external-write"],
+      "tags": ["web", "browser", "e2e", "acceptance"],
+      "status": "verified"
+    },
+    {
+      "id": "github-mcp-server",
+      "name": "GitHub MCP Server",
+      "type": "mcp-server",
+      "tier": "scenario",
+      "maintainer": "GitHub",
+      "repository_url": "https://github.com/github/github-mcp-server",
+      "source_url": "https://github.com/github/github-mcp-server",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/github/github-mcp-server/blob/main/LICENSE",
+      "recommend_when": ["The repository is hosted on GitHub and the user needs Issues, pull requests, reviews, or Actions workflows."],
+      "avoid_when": ["The project is hosted elsewhere or local Git commands are sufficient."],
+      "impacts": ["external-read", "external-write", "credentials-required"],
+      "tags": ["github", "issues", "pull-requests", "ci"],
+      "status": "verified"
+    },
+    {
+      "id": "codegraph",
+      "name": "CodeGraph",
+      "type": "mcp-server",
+      "tier": "scenario",
+      "maintainer": "Colby McHenry",
+      "repository_url": "https://github.com/colbymchenry/codegraph",
+      "source_url": "https://github.com/colbymchenry/codegraph",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/colbymchenry/codegraph/blob/main/LICENSE",
+      "recommend_when": ["The task needs cross-file call paths, impact analysis, architecture exploration, or repeated code discovery."],
+      "avoid_when": ["The change is narrow and local or indexing cost is not justified."],
+      "impacts": ["local-read", "local-write", "external-write"],
+      "tags": ["codegraph", "code-intelligence", "impact-analysis", "architecture", "mcp"],
+      "operational_notes": [
+        "Creates a local .codegraph SQLite index and keeps it synchronized with source changes.",
+        "The installer asks before enabling anonymous usage telemetry, and telemetry can be disabled.",
+        "Cross-file discovery cost is a stronger recommendation signal than repository file count alone."
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "semgrep-mcp",
+      "name": "Semgrep MCP Server",
+      "type": "mcp-server",
+      "tier": "scenario",
+      "maintainer": "Semgrep",
+      "repository_url": "https://github.com/semgrep/semgrep",
+      "source_url": "https://github.com/semgrep/semgrep/tree/develop/cli/src/semgrep/mcp",
+      "license_id": "LGPL-2.1",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/semgrep/semgrep/blob/develop/LICENSE",
+      "recommend_when": ["A code change needs deterministic static analysis for correctness, security, secrets, or project-specific rules."],
+      "avoid_when": ["The language is unsupported or existing project linters and security gates already provide the required evidence."],
+      "impacts": ["local-read", "external-read"],
+      "tags": ["static-analysis", "code-quality", "security", "secrets", "mcp"],
+      "operational_notes": [
+        "Local rules can keep source analysis on the local machine.",
+        "Remote registry rules and the optional AppSec Platform introduce external access and separate service terms.",
+        "Static findings are evidence to review, not proof that the product is defect-free."
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "context7",
+      "name": "Context7",
+      "type": "mcp-server",
+      "tier": "scenario",
+      "maintainer": "Upstash",
+      "repository_url": "https://github.com/upstash/context7",
+      "source_url": "https://github.com/upstash/context7/tree/master/packages/mcp",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/upstash/context7/blob/master/LICENSE",
+      "recommend_when": ["Implementation or migration depends on current third-party library documentation and version-specific examples."],
+      "avoid_when": ["Project-pinned documentation is already authoritative or no external library API is involved."],
+      "impacts": ["external-read"],
+      "tags": ["documentation", "libraries", "api", "versions", "mcp"],
+      "operational_notes": [
+        "The open-source MCP client queries the hosted Context7 documentation service.",
+        "Do not include secrets, proprietary source, or sensitive business data in documentation queries.",
+        "An API key is optional for basic use and required for higher service limits."
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "grafana-mcp",
+      "name": "Grafana MCP",
+      "type": "mcp-server",
+      "tier": "production-risk",
+      "maintainer": "Grafana Labs",
+      "repository_url": "https://github.com/grafana/mcp-grafana",
+      "source_url": "https://github.com/grafana/mcp-grafana",
+      "license_id": "Apache-2.0",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/grafana/mcp-grafana/blob/main/LICENSE",
+      "recommend_when": ["A project already uses Grafana and needs evidence from dashboards, metrics, logs, traces, incidents, or alerts."],
+      "avoid_when": ["Grafana is not in use or production observability access has not been approved."],
+      "impacts": ["external-read", "external-write", "credentials-required", "production-read", "production-write"],
+      "tags": ["grafana", "observability", "metrics", "logs", "traces", "incidents", "mcp"],
+      "operational_notes": [
+        "Start with write tools disabled and least-privilege Grafana credentials.",
+        "Enable write tools only for an explicit alert, dashboard, incident, or annotation change."
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "sonarqube-mcp",
+      "name": "SonarQube MCP Server",
+      "type": "mcp-server",
+      "tier": "scenario",
+      "maintainer": "SonarSource",
+      "repository_url": "https://github.com/SonarSource/sonarqube-mcp-server",
+      "source_url": "https://github.com/SonarSource/sonarqube-mcp-server",
+      "license_id": "Sonar-Source-Available-1.0",
+      "license_kind": "source-available",
+      "license_url": "https://github.com/SonarSource/sonarqube-mcp-server/blob/master/LICENSE",
+      "license_notes": ["Source-available license for non-competitive purposes; it is not an OSI open-source license."],
+      "recommend_when": ["A team already uses SonarQube Server or Cloud and needs code-quality, security, issue, or quality-gate evidence inside the agent workflow."],
+      "avoid_when": ["The license terms do not fit the intended use or SonarQube access has not been approved."],
+      "impacts": ["local-read", "external-read", "external-write", "credentials-required", "production-read"],
+      "tags": ["sonarqube", "static-analysis", "code-quality", "security", "quality-gate", "mcp"],
+      "operational_notes": [
+        "Use read-only mode and a least-privilege SonarQube user token unless a write workflow is explicitly required.",
+        "Anonymous telemetry can be disabled with TELEMETRY_DISABLED=true."
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "sentry-mcp",
+      "name": "Sentry MCP Server",
+      "type": "mcp-server",
+      "tier": "production-risk",
+      "maintainer": "Sentry",
+      "repository_url": "https://github.com/getsentry/sentry-mcp",
+      "source_url": "https://github.com/getsentry/sentry-mcp",
+      "license_id": "FSL-1.1-Apache-2.0",
+      "license_kind": "source-available",
+      "license_url": "https://github.com/getsentry/sentry-mcp/blob/main/LICENSE.md",
+      "license_notes": ["Current releases use FSL-1.1 for permitted non-competing use and convert to Apache-2.0 two years after each version is released."],
+      "recommend_when": ["A project already uses Sentry and needs production issue, trace, release, project, or organization evidence."],
+      "avoid_when": ["The license terms do not fit the intended use or Sentry production access has not been approved."],
+      "impacts": ["external-read", "external-write", "credentials-required", "production-read", "production-write"],
+      "tags": ["sentry", "observability", "debugging", "traces", "issues", "mcp"],
+      "operational_notes": [
+        "Start with the smallest Sentry scopes that can read the required issue and trace evidence.",
+        "Creating or changing projects, teams, releases, alerts, or other service state requires explicit confirmation."
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "dbhub",
+      "name": "DBHub",
+      "type": "mcp-server",
+      "tier": "production-risk",
+      "maintainer": "Bytebase",
+      "repository_url": "https://github.com/bytebase/dbhub",
+      "source_url": "https://github.com/bytebase/dbhub",
+      "license_id": "MIT",
+      "license_kind": "open-source",
+      "license_url": "https://github.com/bytebase/dbhub/blob/main/LICENSE",
+      "recommend_when": ["An approved workflow needs direct schema discovery or SQL queries across PostgreSQL, MySQL, MariaDB, SQL Server, or SQLite."],
+      "avoid_when": ["Direct database access is unnecessary, credentials cannot be scoped safely, or production access has not been approved."],
+      "impacts": ["external-read", "external-write", "credentials-required", "production-read", "production-write"],
+      "tags": ["database", "sql", "postgresql", "mysql", "sqlserver", "sqlite", "mcp"],
+      "operational_notes": [
+        "Use a database-level read-only account with least privileges; application-level read-only parsing is not a security boundary.",
+        "Set row limits and query timeouts, and expose only approved databases.",
+        "Reverify the published SQL Server read-only bypass issue before use: https://github.com/bytebase/dbhub/issues/349.",
+        "Any data mutation requires a separate least-privilege account and explicit confirmation for the exact statement and target."
+      ],
+      "status": "verified"
+    }
+  ]
+}

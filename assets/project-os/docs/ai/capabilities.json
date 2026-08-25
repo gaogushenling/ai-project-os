@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "default_scope": "project",
+  "skill_directory": ".agents/skills",
+  "mcp_config": ".codex/config.toml",
+  "install_all": false,
+  "capabilities": []
+}

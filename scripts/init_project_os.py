@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Initialize the minimal AI Project OS layer in a repository."""
+"""Initialize the minimal AI Project OS layer in a repository.
+
+Template and protocol files can be refreshed with --force. Project data
+files under docs/ai (facts, memory, capability manifest and lock) are
+never overwritten once they exist; resetting them requires deleting them
+first.
+"""
 
 from __future__ import annotations
 
 import argparse
 import datetime as dt
 import json
-import os
-import re
+import sys
 from pathlib import Path
 
 
@@ -15,15 +20,17 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSET_ROOT = ROOT / "assets" / "project-os"
 GITIGNORE_ASSET = ASSET_ROOT / ".gitignore.append"
 
-SECRET_PATTERNS = (
-    re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"),
-    re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b"),
-    re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
-    re.compile(
-        r"(?i)\b(?:api[_-]?key|token|password|secret|private[_-]?key|connection[_-]?string)\b"
-        r"\s*[:=]\s*[\"']?[^\s\"']{8,}"
-    ),
-)
+# Project-owned data files: never overwritten by the initializer, even
+# with --force. They accumulate user-filled facts and install state.
+STATE_FILES = {
+    Path("docs/ai/project.json"),
+    Path("docs/ai/memory.json"),
+    Path("docs/ai/capabilities.json"),
+    Path("docs/ai/capabilities.lock.json"),
+}
+
+sys.path.insert(0, str(ROOT / "scripts"))
+from _common import SECRET_PATTERNS  # noqa: E402
 
 
 def assert_safe_asset(path: Path) -> None:
@@ -93,7 +100,9 @@ def initialize(
         relative = render_path(source.relative_to(ASSET_ROOT), date)
         destination = resolved / relative
         exists = destination.exists()
-        if exists and not force:
+        if exists and relative in STATE_FILES:
+            action = "protected"
+        elif exists and not force:
             action = "skipped"
         else:
             action = "overwritten" if exists else "created"

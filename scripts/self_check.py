@@ -31,9 +31,37 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         target = Path(tmp) / "smoke-project"
+        skill_source = Path(tmp) / "systematic-debugging"
+        skill_source.mkdir()
+        (skill_source / "SKILL.md").write_text(
+            "---\nname: systematic-debugging\ndescription: Smoke test skill.\n---\n",
+            encoding="utf-8",
+        )
         run(str(SCRIPTS / "init_project_os.py"), "--target", str(target), "--date", "2026-08-25")
+        run(
+            str(SCRIPTS / "install_project_integration.py"),
+            "--target",
+            str(target),
+            "--id",
+            "superpowers",
+            "--skill",
+            "systematic-debugging",
+            "--source-dir",
+            str(skill_source),
+        )
+        run(
+            str(SCRIPTS / "install_project_integration.py"),
+            "--target",
+            str(target),
+            "--id",
+            "context7",
+            "--command",
+            "npx",
+            "--arg=@upstash/context7-mcp",
+        )
         run(str(SCRIPTS / "validate_project_os.py"), "--target", str(target))
 
+    print("PROJECT INTEGRATIONS CHECKED")
     print("SELF CHECK PASSED")
     return 0
 

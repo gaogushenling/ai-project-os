@@ -5,61 +5,99 @@ description: Initialize and operate a lightweight project-level AI collaboration
 
 # AI Project OS
 
-Use this skill to give a repository a small, durable collaboration layer for AI coding agents. Keep the skill generic; keep project-specific facts inside the project.
+## 第一原理
 
-## Enter a project
+让任何 AI 进入一个项目后，都能基于项目自身的真实信息，以最小必要能力，持续交付可使用、可验证、可复现且不越界的结果。
 
-1. Read the project `AGENTS.md`.
-2. Read `.codex/skills/project-memory/SKILL.md` when present.
-3. Match the request against `docs/ai/routes.json`.
-4. Load only the files named by the matched route.
-5. Treat current user instructions, code, tests, and project-native rules as more authoritative than recorded memory.
+由此推出六条原则：
 
-Do not load every project-memory file by default. Progressive loading is the main context-control mechanism.
+1. **项目是事实载体**：规则、上下文、Skill、MCP 配置和版本跟随项目，不依赖个人全局环境。
+2. **目标是产品交付**：衡量标准是用户能否使用、结果能否验收，而不是生成了多少代码。
+3. **只引入最小必要能力**：只加载、安装和启用当前项目真正需要的能力。
+4. **证据高于声明**：区分代码实现、工程验证、产品验收；没有证据就不提升完成等级。
+5. **能力不等于权限**：推荐不等于安装，安装不等于启用，启用不等于允许执行生产操作。
+6. **AI 受项目约束**：不擅自扩大范围、修改生产、处理密钥或替用户做高风险决策。
 
-## Initialize
+判断是否增加功能只有一个问题：它能否让 AI 更准确地理解项目、更稳定地完成真实任务，或让交付更容易验证？三者都不能，就不加入。
 
-Preview before writing to an existing project:
+## 进入一个项目
+
+1. 读项目的 `AGENTS.md`。
+2. 有 `.agents/skills/project-memory/SKILL.md` 时读它。
+3. 用请求匹配 `docs/ai/routes.json`。
+4. 只加载匹配路由列出的文件。
+5. 当前用户指令、代码、测试和项目自身规则优先于记忆记录。
+
+不要默认加载全部项目记忆文件；渐进式加载是主要的上下文控制手段。
+
+生成的 `AGENTS.md` 沿用项目级指令文件约定（OpenAI Codex 引入，GitHub Copilot 等工具已支持）：指令文件放在仓库根目录。协作层按作用域分层：`AGENTS.md`（项目协议）→ `.agents/skills/project-memory/SKILL.md`（加载入口）→ `docs/ai/`（事实）。
+
+## 初始化
+
+写入已有项目前先预演：
 
 ```powershell
 python scripts/init_project_os.py --target <project-root> --dry-run
 ```
 
-Apply without overwriting existing files:
+确认后应用，默认不覆盖已有文件：
 
 ```powershell
 python scripts/init_project_os.py --target <project-root>
 ```
 
-Use `--force` only when replacing the generated layer is intentional.
+`--force` 只刷新模板与协议文件；`docs/ai/` 下已填写的状态文件（项目事实、记忆、能力清单与锁文件）永不被覆盖，需要重置时手动删除对应文件。
 
-## Project memory contract
+## 项目记忆契约
 
-- `docs/ai/project.json`: stable project facts, source-of-truth pointers, commands, quality gates, and risk boundaries.
-- `docs/ai/routes.json`: request signals and the minimum project context to load.
-- `docs/ai/memory.json`: verified tool failures, user corrections, and regression-prevention records.
-- `docs/ai/logs/`: concise evidence from meaningful operations and verification.
+- `docs/ai/project.json`：稳定的项目事实、事实来源、命令、质量门禁和风险边界。
+- `docs/ai/routes.json`：请求信号与需要加载的最小上下文。
+- `docs/ai/memory.json`：经过验证的工具失败、用户纠偏和防复发记录。
+- `docs/ai/capabilities.json`：项目级 Skill 与 MCP 选择及生命周期状态。
+- `docs/ai/capabilities.lock.json`：锁定的来源版本和内容或配置校验值。
+- `docs/ai/logs/`：有意义操作与验证的简洁证据。
 
-Write facts to the narrowest matching file. Do not copy methodology manuals, chat transcripts, secrets, or speculative notes into project memory.
+把事实写进最匹配的文件。不把方法论手册、聊天记录、密钥或猜测写进项目记忆。
 
-## Product work protocol
+记忆与代码强相关：相关代码、测试或方案变更后，复核对应记忆是否仍然成立；带 `expires_at` 的条目到期后应复核并更新或移除，而不是继续引用。
 
-For non-trivial product changes:
+## 冲突处理
 
-- Start from the user-visible outcome and real constraints. Choose the simplest mechanism that closes the required loop; do not start from available technology or a generic checklist.
-- Define the user, current flow, target flow, smallest complete scope, important failure paths, and acceptance evidence before implementation.
-- Check UI, API, backend, data, transactions, idempotency, concurrency, indexes, performance, permissions, audit, and observability only when relevant to the outcome or a material risk.
-- Classify adjacent issues as a current blocker, a required risk to handle now, or a later improvement. Implement only the first two.
-- Communicate the conclusion first in plain language. Add technical depth only when it helps the reader decide, implement, or verify.
+上下文、文档或代码出现冲突时，先看时间，不默认判定矛盾。判断新旧优先用 git：对冲突双方分别查最后改动时间（`git log -1 --format=%cs -- <path>`），未提交的本地改动视为最新；`docs/ai/memory.json` 的 `verified_at` 用于判断记忆条目本身的新旧。
 
-## Operate
+1. 新文档优先：时间较新的一方通常代表当前生效的方案，旧一方不代表另一个并行的真相。
+2. 复核旧文档：方案切换时，旧文档中仍有效的约束、边界和说明可能被遗漏；把它们补回新文档，而不是整体丢弃。
+3. 真实冲突才记录：无法用时间裁决或确认冲突时，以当前用户指令和 `docs/ai/project.json` 的事实为准，并把结论记入 `docs/ai/memory.json` 的 `corrections`，带上 `verified_at`。
 
-- Before running project commands, use the command recorded in `docs/ai/project.json` and check relevant failures in `docs/ai/memory.json`.
-- After a tool failure, correction, or recurring defect, record evidence only when it will change future behavior.
-- Ask before production changes, destructive data operations, credential handling, or other actions marked for confirmation by project facts.
-- At delivery, distinguish implementation, engineering verification, and product acceptance. Report what remains unverified.
+## 产品工作协议
 
-## Validate
+对非琐碎的产品改动：
+
+- 从用户可见的结果和真实约束出发，选择能闭合闭环的最简机制；不从可用技术或通用清单出发。
+- 实现前先明确用户、当前流程、目标流程、最小完整范围、重要失败路径和验收证据。
+- 仅在相关时检查 UI、API、后端、数据、事务、幂等、并发、索引、性能、权限、审计和可观测性。
+- 相邻问题分为当前阻塞、当前必须处理的风险、以后优化；只实现前两类。
+- 先讲结论、用通俗语言；技术细节只加在有助于决策、实现或验证时。
+
+## 操作
+
+- 运行项目命令前，用 `docs/ai/project.json` 里记录的命令，并检查 `docs/ai/memory.json` 里的相关失败。
+- 工具失败、纠偏或复发缺陷发生后，只在会改变未来行为时记录证据。
+- 生产变更、破坏性数据操作、凭据处理以及项目事实标记为需确认的动作，执行前先询问。
+- 交付时区分实现、工程验证和产品验收，并报告仍未验证的部分。
+
+## 推荐与安装能力
+
+用户需要可选能力时，读 `references/recommended-integrations.json`。
+
+- Skill（提示与工作流指导）与 MCP Server（工具能力）分开看待。
+- 只推荐命中当前意图或有项目证据的条目；展示来源、维护方、许可证、影响和理由。
+- 不自动安装、不自动启用。
+- 用户明确选择后默认项目级安装：第三方 Skill 放进项目声明的 `skill_directory`（协作层自带入口固定在 `.agents/skills/project-memory`），MCP 配置写入项目声明的 `mcp_config`。两个路径都在 `docs/ai/capabilities.json` 里声明，模板默认分别是 `.agents/skills` 和 `.codex/config.toml`；不同工具改自己的指向即可。
+- 集合仓库只安装选中的子 Skill；安装或配置的能力都写入项目清单和锁文件。
+- 用户选定后、安装前，重新核对上游源码与许可证。
+
+## 校验
 
 ```powershell
 python scripts/validate_project_os.py --target <project-root>
@@ -67,4 +105,4 @@ python scripts/validate_project_os.py --target <project-root> --strict
 python scripts/self_check.py
 ```
 
-Validation checks required files, JSON structure, route safety, local-only ignore rules, unresolved placeholders, and likely secrets.
+校验覆盖必需文件、JSON 结构、路由安全、记忆条目契约与过期、仅本地忽略规则、未填占位符、疑似密钥、能力作用域与清单/锁漂移，以及锁定技能的目录哈希与 MCP 托管配置块哈希。
