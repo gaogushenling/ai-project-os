@@ -314,6 +314,117 @@ class ProjectOsTests(unittest.TestCase):
         self.assertNotIn("前端工程规范", skill)
         self.assertNotIn("九个阶段", skill)
 
+    def test_english_docs_are_the_default_with_linked_chinese_translations(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readme_zh = (ROOT / "README_zh.md").read_text(encoding="utf-8")
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        skill_zh = (ROOT / "SKILL_zh.md").read_text(encoding="utf-8")
+
+        # Language links point at each other in both directions.
+        self.assertIn("README_zh.md", readme)
+        self.assertIn("README.md", readme_zh)
+        self.assertIn("SKILL_zh.md", skill)
+        self.assertIn("SKILL.md", skill_zh)
+
+        def cjk_lines(text: str) -> list[str]:
+            return [
+                line
+                for line in text.splitlines()
+                if any("\u4e00" <= char <= "\u9fff" for char in line)
+            ]
+
+        # English is the default: Chinese in English docs is limited to language links.
+        self.assertLessEqual(len(cjk_lines(readme)), 2)
+        self.assertLessEqual(len(cjk_lines(skill)), 2)
+        self.assertGreater(len(cjk_lines(readme_zh)), 10)
+        self.assertGreater(len(cjk_lines(skill_zh)), 10)
+
+    def test_getting_started_guides_people_and_ai_in_both_languages(self) -> None:
+        guide_path = ROOT / "docs" / "getting-started.md"
+        guide_zh_path = ROOT / "docs" / "getting-started_zh.md"
+
+        self.assertTrue(guide_path.is_file(), "missing English getting-started guide")
+        self.assertTrue(guide_zh_path.is_file(), "missing Chinese getting-started guide")
+
+        guide = guide_path.read_text(encoding="utf-8")
+        guide_zh = guide_zh_path.read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readme_zh = (ROOT / "README_zh.md").read_text(encoding="utf-8")
+
+        self.assertIn("getting-started_zh.md", guide)
+        self.assertIn("getting-started.md", guide_zh)
+        self.assertIn("docs/getting-started.md", readme)
+        self.assertIn("docs/getting-started_zh.md", readme_zh)
+
+        for expected in [
+            "Give this repository to your AI",
+            "Manual setup",
+            "--dry-run",
+            "Single repository",
+            "Multi-repository workspace",
+            "Git submodules",
+            "Ignored nested repositories",
+            "Daily use",
+            "Updating an initialized project",
+            "Rollback and removal",
+            "Safety boundaries",
+            "Troubleshooting",
+            "Adoption checklist",
+            "generated files, current limitations, and rollback",
+            "git revert",
+        ]:
+            self.assertIn(expected, guide)
+
+        for expected in [
+            "把这个仓库交给 AI",
+            "手动接入",
+            "--dry-run",
+            "单仓库",
+            "多仓库工作区",
+            "Git Submodule",
+            "被父仓库忽略的嵌套仓库",
+            "日常使用",
+            "更新已初始化项目",
+            "回退与卸载",
+            "安全边界",
+            "故障处理",
+            "接入验收清单",
+            "生成文件、当前限制和回退方式",
+            "git revert",
+        ]:
+            self.assertIn(expected, guide_zh)
+
+    def test_repository_instructions_define_safe_ai_adoption(self) -> None:
+        instructions_path = ROOT / "AGENTS.md"
+        self.assertTrue(instructions_path.is_file(), "missing repository AI instructions")
+
+        instructions = instructions_path.read_text(encoding="utf-8")
+        for expected in [
+            "inspect the target read-only",
+            "--dry-run",
+            "recommend",
+            "rollback",
+            "ask the user",
+            "Do not",
+            "absolute local paths",
+            "docs/getting-started.md",
+            "docs/getting-started_zh.md",
+        ]:
+            self.assertIn(expected, instructions)
+
+        portable_docs = "\n".join(
+            [
+                instructions,
+                (ROOT / "README.md").read_text(encoding="utf-8"),
+                (ROOT / "README_zh.md").read_text(encoding="utf-8"),
+                (ROOT / "docs/getting-started.md").read_text(encoding="utf-8"),
+                (ROOT / "docs/getting-started_zh.md").read_text(encoding="utf-8"),
+            ]
+        )
+        self.assertNotRegex(portable_docs, r"[A-Za-z]:\\")
+        self.assertNotIn("/home/", portable_docs.lower())
+        self.assertNotIn("/users/", portable_docs.lower())
+
     def test_openai_metadata_uses_the_supported_interface_contract(self) -> None:
         metadata = (ROOT / "agents/openai.yaml").read_text(encoding="utf-8")
 
@@ -321,6 +432,8 @@ class ProjectOsTests(unittest.TestCase):
         self.assertIn('  display_name: "AI Project OS"', metadata)
         self.assertIn('  short_description: "', metadata)
         self.assertIn('$ai-project-os', metadata)
+        self.assertIn('default_prompt: "Use $ai-project-os', metadata)
+        self.assertNotIn("请使用", metadata)
 
     def test_generated_project_has_a_concise_product_work_protocol(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

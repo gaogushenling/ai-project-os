@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "references" / "recommended-integrations.json"
 CATALOG_DOC = ROOT / "references" / "recommended-integrations.md"
+CATALOG_DOC_ZH = ROOT / "references" / "recommended-integrations_zh.md"
 LIST_SCRIPT = ROOT / "scripts" / "list_recommended_integrations.py"
 
 ALLOWED_LICENSES = {
@@ -263,12 +264,21 @@ class RecommendedIntegrationsTests(unittest.TestCase):
 
     def test_project_docs_explain_opt_in_recommendations_and_type_boundary(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readme_zh = (ROOT / "README_zh.md").read_text(encoding="utf-8")
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        skill_zh = (ROOT / "SKILL_zh.md").read_text(encoding="utf-8")
 
+        # English is the default: the operative docs state the policy in English.
         for text in [readme, skill]:
             self.assertIn("references/recommended-integrations.json", text)
             self.assertIn("Skill", text)
             self.assertIn("MCP Server", text)
+            self.assertIn("never installed or enabled automatically", text)
+            self.assertIn("project-level", text)
+
+        # The linked Chinese translations state the same policy in Chinese.
+        for text in [readme_zh, skill_zh]:
+            self.assertIn("references/recommended-integrations.json", text)
             self.assertIn("不自动安装", text)
             self.assertIn("项目级", text)
 
@@ -276,26 +286,46 @@ class RecommendedIntegrationsTests(unittest.TestCase):
         self.assertIn("scripts/install_project_integration.py", readme)
         self.assertIn(".agents/skills", readme)
         self.assertIn(".codex/config.toml", readme)
-        self.assertIn("一个源码仓库只保留一条推荐", readme)
+        self.assertIn("one recommendation per source repository", readme)
+        self.assertIn("一个源码仓库只保留一条推荐", readme_zh)
         self.assertNotIn("--type skill --", readme)
+        self.assertNotIn("--type skill --", readme_zh)
 
-    def test_human_catalog_links_every_source_and_license(self) -> None:
+    def test_human_catalog_links_every_source_and_license_in_both_languages(self) -> None:
         catalog = self.load_catalog()
-        document = CATALOG_DOC.read_text(encoding="utf-8")
+        documents = [
+            CATALOG_DOC.read_text(encoding="utf-8"),
+            CATALOG_DOC_ZH.read_text(encoding="utf-8"),
+        ]
 
-        self.assertIn("Skill 项目与 MCP Server", document)
-        self.assertIn("一个源码仓库只保留一条推荐", document)
+        for item in self.all_items(catalog):
+            with self.subTest(item=item["id"]):
+                for document in documents:
+                    self.assertIn(item["repository_url"], document)
+                    self.assertIn(item["license_id"], document)
+                    self.assertIn(item["license_url"], document)
+
+    def test_human_catalog_english_is_the_default_with_a_chinese_translation(self) -> None:
+        document = CATALOG_DOC.read_text(encoding="utf-8")
+        document_zh = CATALOG_DOC_ZH.read_text(encoding="utf-8")
+
+        self.assertIn("Skill projects", document)
+        self.assertIn("One recommendation per source repository", document)
         self.assertIn("Source-Available", document)
-        self.assertIn("不自动安装", document)
-        self.assertIn("默认安装到项目级", document)
+        self.assertIn("never installed or enabled automatically", document)
+        self.assertIn("project-level", document)
         self.assertNotIn("未进入清单", document)
         self.assertNotIn("filesystem", document)
         self.assertNotIn("Trivy", document)
-        for item in self.all_items(catalog):
-            with self.subTest(item=item["id"]):
-                self.assertIn(item["repository_url"], document)
-                self.assertIn(item["license_id"], document)
-                self.assertIn(item["license_url"], document)
+
+        self.assertIn("Skill 项目与 MCP Server", document_zh)
+        self.assertIn("一个源码仓库只保留一条推荐", document_zh)
+        self.assertIn("Source-Available", document_zh)
+        self.assertIn("不自动安装", document_zh)
+        self.assertIn("默认安装到项目级", document_zh)
+        self.assertNotIn("未进入清单", document_zh)
+        self.assertNotIn("filesystem", document_zh)
+        self.assertNotIn("Trivy", document_zh)
 
 
 if __name__ == "__main__":

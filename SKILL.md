@@ -5,99 +5,112 @@ description: Initialize and operate a lightweight project-level AI collaboration
 
 # AI Project OS
 
-## 第一原理
+## First principles
 
-让任何 AI 进入一个项目后，都能基于项目自身的真实信息，以最小必要能力，持续交付可使用、可验证、可复现且不越界的结果。
+Let any AI enter a project and, based on the project's own verified information, keep delivering usable, verifiable, reproducible results with the minimum necessary capabilities — without overstepping.
 
-由此推出六条原则：
+Six rules follow:
 
-1. **项目是事实载体**：规则、上下文、Skill、MCP 配置和版本跟随项目，不依赖个人全局环境。
-2. **目标是产品交付**：衡量标准是用户能否使用、结果能否验收，而不是生成了多少代码。
-3. **只引入最小必要能力**：只加载、安装和启用当前项目真正需要的能力。
-4. **证据高于声明**：区分代码实现、工程验证、产品验收；没有证据就不提升完成等级。
-5. **能力不等于权限**：推荐不等于安装，安装不等于启用，启用不等于允许执行生产操作。
-6. **AI 受项目约束**：不擅自扩大范围、修改生产、处理密钥或替用户做高风险决策。
+1. **The project is the source of truth**: rules, context, skills, MCP configuration, and versions live with the project, not in a personal global environment.
+2. **The goal is product delivery**: the measure is whether users can use the result and whether it can be accepted — not how much code was generated.
+3. **Only the minimum necessary capabilities**: load, install, and enable only what the current project actually needs.
+4. **Evidence over claims**: distinguish implementation, engineering verification, and product acceptance; never raise the completion level without evidence.
+5. **Capability is not permission**: recommended ≠ installed, installed ≠ enabled, enabled ≠ authorized to run production operations.
+6. **AI is bound by the project**: never expand scope, modify production, handle secrets, or make high-risk decisions on the user's behalf.
 
-判断是否增加功能只有一个问题：它能否让 AI 更准确地理解项目、更稳定地完成真实任务，或让交付更容易验证？三者都不能，就不加入。
+There is only one question for adding a feature: does it help AI understand the project more accurately, complete real tasks more reliably, or make delivery easier to verify? If it does none of the three, it does not go in.
 
-## 进入一个项目
+## Entering a project
 
-1. 读项目的 `AGENTS.md`。
-2. 有 `.agents/skills/project-memory/SKILL.md` 时读它。
-3. 用请求匹配 `docs/ai/routes.json`。
-4. 只加载匹配路由列出的文件。
-5. 当前用户指令、代码、测试和项目自身规则优先于记忆记录。
+1. Read the project's `AGENTS.md`.
+2. Read `.agents/skills/project-memory/SKILL.md` when it exists.
+3. Match the request against `docs/ai/routes.json`.
+4. Load only the files listed by the matching route.
+5. Current user instructions, code, tests, and project-native rules take precedence over memory entries.
 
-不要默认加载全部项目记忆文件；渐进式加载是主要的上下文控制手段。
+Do not load all project memory files by default; progressive loading is the primary context control.
 
-生成的 `AGENTS.md` 沿用项目级指令文件约定（OpenAI Codex 引入，GitHub Copilot 等工具已支持）：指令文件放在仓库根目录。协作层按作用域分层：`AGENTS.md`（项目协议）→ `.agents/skills/project-memory/SKILL.md`（加载入口）→ `docs/ai/`（事实）。
+The generated `AGENTS.md` follows the project-level instruction file convention (introduced by OpenAI Codex, supported by GitHub Copilot and others): the instruction file lives at the repository root. The layer is scoped as `AGENTS.md` (project agreement) → `.agents/skills/project-memory/SKILL.md` (loading entry) → `docs/ai/` (facts).
 
-## 初始化
+## Advising adoption
 
-写入已有项目前先预演：
+When a user gives you this repository and asks how to use or adopt it:
+
+1. Read `docs/getting-started.md` (or `docs/getting-started_zh.md` for Chinese).
+2. Inspect the target read-only before recommending or writing anything.
+3. Identify the Git roots, existing instructions, initialized project layers, and repository boundaries.
+4. Recommend the smallest suitable initialization scope and explain fact ownership, generated files, limitations, and rollback.
+5. Decide safe reversible details from evidence; ask the user only about choices that materially change the target, authority boundary, Git organization, or overwrite behavior.
+6. Run `--dry-run` before initialization, then validate the applied result.
+
+Never restructure repositories, overwrite existing instructions, enable optional capabilities, or commit secrets and absolute local paths as an implicit part of adoption.
+
+## Initialization
+
+Dry-run before writing into an existing project:
 
 ```powershell
 python scripts/init_project_os.py --target <project-root> --dry-run
 ```
 
-确认后应用，默认不覆盖已有文件：
+Then apply; existing files are not overwritten by default:
 
 ```powershell
 python scripts/init_project_os.py --target <project-root>
 ```
 
-`--force` 只刷新模板与协议文件；`docs/ai/` 下已填写的状态文件（项目事实、记忆、能力清单与锁文件）永不被覆盖，需要重置时手动删除对应文件。
+`--force` only refreshes template and protocol files; the filled state files under `docs/ai/` (project facts, memory, capability manifest, and lock) are never overwritten — delete them manually to reset.
 
-## 项目记忆契约
+## Project memory contract
 
-- `docs/ai/project.json`：稳定的项目事实、事实来源、命令、质量门禁和风险边界。
-- `docs/ai/routes.json`：请求信号与需要加载的最小上下文。
-- `docs/ai/memory.json`：经过验证的工具失败、用户纠偏和防复发记录。
-- `docs/ai/capabilities.json`：项目级 Skill 与 MCP 选择及生命周期状态。
-- `docs/ai/capabilities.lock.json`：锁定的来源版本和内容或配置校验值。
-- `docs/ai/logs/`：有意义操作与验证的简洁证据。
+- `docs/ai/project.json`: stable project facts, fact sources, commands, quality gates, and risk boundaries.
+- `docs/ai/routes.json`: request signals and the minimum context to load.
+- `docs/ai/memory.json`: verified tool failures, user corrections, and recurrence-prevention records.
+- `docs/ai/capabilities.json`: project-level Skill and MCP selections and their lifecycle state.
+- `docs/ai/capabilities.lock.json`: locked source revisions and content or configuration checksums.
+- `docs/ai/logs/`: concise evidence of meaningful operations and verification.
 
-把事实写进最匹配的文件。不把方法论手册、聊天记录、密钥或猜测写进项目记忆。
+Write each fact into the file it best matches. Never write methodology manuals, chat transcripts, secrets, or guesses into project memory.
 
-记忆与代码强相关：相关代码、测试或方案变更后，复核对应记忆是否仍然成立；带 `expires_at` 的条目到期后应复核并更新或移除，而不是继续引用。
+Memory is tightly coupled to code: after the code, tests, or approach a record depends on changes, re-verify that record; entries past `expires_at` must be reviewed and updated or removed, not reused.
 
-## 冲突处理
+## Conflict handling
 
-上下文、文档或代码出现冲突时，先看时间，不默认判定矛盾。判断新旧优先用 git：对冲突双方分别查最后改动时间（`git log -1 --format=%cs -- <path>`），未提交的本地改动视为最新；`docs/ai/memory.json` 的 `verified_at` 用于判断记忆条目本身的新旧。
+When context, documentation, or code conflicts, check recency first; do not assume a contradiction by default. Use git to judge which side is newer: query each side's last change (`git log -1 --format=%cs -- <path>`), treating uncommitted local changes as newest; `verified_at` in `docs/ai/memory.json` judges how new a memory entry itself is.
 
-1. 新文档优先：时间较新的一方通常代表当前生效的方案，旧一方不代表另一个并行的真相。
-2. 复核旧文档：方案切换时，旧文档中仍有效的约束、边界和说明可能被遗漏；把它们补回新文档，而不是整体丢弃。
-3. 真实冲突才记录：无法用时间裁决或确认冲突时，以当前用户指令和 `docs/ai/project.json` 的事实为准，并把结论记入 `docs/ai/memory.json` 的 `corrections`，带上 `verified_at`。
+1. Prefer the newer document: the newer side usually represents the current approach; the older side is not a second, parallel truth.
+2. Re-review the older document: constraints, boundaries, and notes that remain valid may have been dropped during a switch; restore them into the newer document instead of discarding them wholesale.
+3. Record only confirmed conflicts: when time cannot decide or a conflict is confirmed, follow the current user instruction and the facts in `docs/ai/project.json`, and record the resolution in `docs/ai/memory.json` `corrections` with `verified_at`.
 
-## 产品工作协议
+## Product work protocol
 
-对非琐碎的产品改动：
+For non-trivial product changes:
 
-- 从用户可见的结果和真实约束出发，选择能闭合闭环的最简机制；不从可用技术或通用清单出发。
-- 实现前先明确用户、当前流程、目标流程、最小完整范围、重要失败路径和验收证据。
-- 仅在相关时检查 UI、API、后端、数据、事务、幂等、并发、索引、性能、权限、审计和可观测性。
-- 相邻问题分为当前阻塞、当前必须处理的风险、以后优化；只实现前两类。
-- 先讲结论、用通俗语言；技术细节只加在有助于决策、实现或验证时。
+- Start from the user-visible outcome and real constraints; choose the simplest mechanism that closes the loop, not from available technology or a generic checklist.
+- Before implementing, clarify the user, current flow, target flow, smallest complete scope, important failure paths, and acceptance evidence.
+- Check UI, API, backend, data, transactions, idempotency, concurrency, indexes, performance, permissions, audit, and observability only when relevant.
+- Classify adjacent issues as current blocker, required risk, or later improvement; implement only the first two.
+- Lead with the conclusion in plain language; add technical detail only when it helps a decision, implementation, or verification.
 
-## 操作
+## Operations
 
-- 运行项目命令前，用 `docs/ai/project.json` 里记录的命令，并检查 `docs/ai/memory.json` 里的相关失败。
-- 工具失败、纠偏或复发缺陷发生后，只在会改变未来行为时记录证据。
-- 生产变更、破坏性数据操作、凭据处理以及项目事实标记为需确认的动作，执行前先询问。
-- 交付时区分实现、工程验证和产品验收，并报告仍未验证的部分。
+- Before running project commands, use the commands recorded in `docs/ai/project.json` and check related failures in `docs/ai/memory.json`.
+- After a tool failure, correction, or recurring defect, record evidence only when it will change future behavior.
+- Ask before production changes, destructive data operations, credential handling, and actions the project facts mark for confirmation.
+- At delivery, separate implementation, engineering verification, and product acceptance, and report what remains unverified.
 
-## 推荐与安装能力
+## Recommendation and installation capabilities
 
-用户需要可选能力时，读 `references/recommended-integrations.json`。
+When the user needs an optional capability, read `references/recommended-integrations.json`.
 
-- Skill（提示与工作流指导）与 MCP Server（工具能力）分开看待。
-- 只推荐命中当前意图或有项目证据的条目；展示来源、维护方、许可证、影响和理由。
-- 不自动安装、不自动启用。
-- 用户明确选择后默认项目级安装：第三方 Skill 放进项目声明的 `skill_directory`（协作层自带入口固定在 `.agents/skills/project-memory`），MCP 配置写入项目声明的 `mcp_config`。两个路径都在 `docs/ai/capabilities.json` 里声明，模板默认分别是 `.agents/skills` 和 `.codex/config.toml`；不同工具改自己的指向即可。
-- 集合仓库只安装选中的子 Skill；安装或配置的能力都写入项目清单和锁文件。
-- 用户选定后、安装前，重新核对上游源码与许可证。
+- Treat Skills (prompt and workflow guidance) and MCP Servers (tool capabilities) separately.
+- Recommend only entries that match the current intent or have project evidence; show source, maintainer, license, impact, and rationale.
+- Recommendations are never installed or enabled automatically.
+- After an explicit user choice, default to project-level installation: third-party skills go into the project's declared `skill_directory` (the layer's own entry stays fixed at `.agents/skills/project-memory`), and MCP configuration goes into the project's declared `mcp_config`. Both paths are declared in `docs/ai/capabilities.json`; template defaults are `.agents/skills` and `.codex/config.toml`, and other tools change their own pointers.
+- Collection repositories install only the selected child skill; every installed or configured capability is written to the project manifest and lock file.
+- After the user's choice and before installation, re-verify the upstream source and license.
 
-## 校验
+## Validation
 
 ```powershell
 python scripts/validate_project_os.py --target <project-root>
@@ -105,4 +118,6 @@ python scripts/validate_project_os.py --target <project-root> --strict
 python scripts/self_check.py
 ```
 
-校验覆盖必需文件、JSON 结构、路由安全、记忆条目契约与过期、仅本地忽略规则、未填占位符、疑似密钥、能力作用域与清单/锁漂移，以及锁定技能的目录哈希与 MCP 托管配置块哈希。
+Validation covers required files, JSON structure, route safety, memory entry contract and expiry, local-only ignore rules, unfilled placeholders, possible secrets, capability scope and manifest/lock drift, plus directory hashes of locked skills and hashes of managed MCP config blocks.
+
+Human-readable Chinese translation: [SKILL_zh.md](./SKILL_zh.md)
