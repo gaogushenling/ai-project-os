@@ -19,6 +19,8 @@
 
 ## 进入一个项目
 
+在已初始化项目中执行每项任务时自动应用本协议，无需用户显式调用 `$ai-project-os`。
+
 1. 读项目的 `AGENTS.md`。
 2. 有 `.agents/skills/project-memory/SKILL.md` 时读它。
 3. 用请求匹配 `docs/ai/routes.json`。

@@ -115,9 +115,9 @@ Review the diff, then commit only the intended collaboration-layer files to the 
 
 ## Daily use
 
-Start the AI in the initialized project and ask it to use `$ai-project-os` for the task. For example:
+Start the AI in the initialized project and describe the task normally. The project protocol automatically applies through compatible agents: they read `AGENTS.md`, enter project memory, and route the request, with no special command or repeated project selection required. For example:
 
-> Use $ai-project-os to investigate this request. Load only the relevant project facts, define the smallest complete outcome, and state the verification evidence before delivery.
+> Investigate this request. Load only the relevant project facts, define the smallest complete outcome, and state the verification evidence before delivery.
 
 During work, the AI should:
 

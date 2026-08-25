@@ -394,6 +394,34 @@ class ProjectOsTests(unittest.TestCase):
         ]:
             self.assertIn(expected, guide_zh)
 
+    def test_readmes_explain_the_personal_workbench_motivation(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readme_zh = (ROOT / "README_zh.md").read_text(encoding="utf-8")
+
+        for expected in [
+            "## Motivation and purpose",
+            "personal workbench",
+            "naturally diverse",
+            "project-level foundation",
+            "takes the form of a project-level collaboration layer",
+            "minimal common foundation",
+            "manages adopted capabilities and their risk boundaries",
+            "collaboration seamless across tools and sessions",
+        ]:
+            self.assertIn(expected, readme)
+
+        for expected in [
+            "## 初衷与目标",
+            "个人 AI 开发工作台",
+            "千人千面",
+            "项目级底座",
+            "以项目级协作层的形式存在",
+            "最小共同基础",
+            "管理已引入的能力及其风险边界",
+            "AI 工具、IDE 和开发环境",
+        ]:
+            self.assertIn(expected, readme_zh)
+
     def test_repository_instructions_define_safe_ai_adoption(self) -> None:
         instructions_path = ROOT / "AGENTS.md"
         self.assertTrue(instructions_path.is_file(), "missing repository AI instructions")
@@ -451,6 +479,38 @@ class ProjectOsTests(unittest.TestCase):
             ]:
                 self.assertIn(principle, agreement)
             self.assertLessEqual(len(agreement.splitlines()), 50)
+
+    def test_initialized_project_applies_the_protocol_automatically(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp)
+            self.init(target)
+            agreement = (target / "AGENTS.md").read_text(encoding="utf-8")
+
+        self.assertIn("applies automatically to every task", agreement)
+        self.assertIn("does not need to invoke `$ai-project-os` explicitly", agreement)
+
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        skill_zh = (ROOT / "SKILL_zh.md").read_text(encoding="utf-8")
+        self.assertIn("apply this protocol automatically", skill)
+        self.assertIn("do not require the user to invoke `$ai-project-os`", skill)
+        self.assertIn("自动应用本协议", skill_zh)
+        self.assertIn("无需用户显式调用 `$ai-project-os`", skill_zh)
+
+        guide = (ROOT / "docs/getting-started.md").read_text(encoding="utf-8")
+        guide_zh = (ROOT / "docs/getting-started_zh.md").read_text(encoding="utf-8")
+        daily = guide.split("## Daily use", 1)[1].split("## Updating", 1)[0]
+        daily_zh = guide_zh.split("## 日常使用", 1)[1].split("## 更新", 1)[0]
+        self.assertIn("describe the task normally", daily)
+        self.assertIn("automatically applies", daily)
+        self.assertNotIn("$ai-project-os", daily)
+        self.assertIn("直接描述任务", daily_zh)
+        self.assertIn("自动应用", daily_zh)
+        self.assertNotIn("$ai-project-os", daily_zh)
+
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readme_zh = (ROOT / "README_zh.md").read_text(encoding="utf-8")
+        self.assertIn("state the task normally", readme)
+        self.assertIn("直接描述任务", readme_zh)
 
     def test_development_routes_encode_outcome_scope_risk_and_acceptance_gates(self) -> None:
         routes = json.loads(

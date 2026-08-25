@@ -4,6 +4,16 @@
 
 A lightweight, portable project-level AI collaboration layer. Project rules, skills, MCP configuration, and capability versions live with the project by default, with no dependence on a developer machine's global configuration.
 
+## Motivation and purpose
+
+AI-assisted development is evolving from the use of a single tool into a personal workbench. Each developer combines different models, IDEs, Skills, MCP servers, automation tools, and working habits. The projects, environments, and problems they encounter also vary widely. Personal AI development is naturally diverse and should not be forced into one standardized workflow.
+
+Despite those differences, several foundational problems remain: how an AI understands the current project, loads only the context required for a task, retains useful failures and corrections, manages adopted capabilities and their risk boundaries, and verifies delivery with evidence.
+
+AI Project OS exists to provide a lightweight, portable, project-level foundation for personal AI development workbenches. This foundation takes the form of a project-level collaboration layer: it keeps project facts, context routing, useful memory, capability state, risk boundaries, and delivery validation with the project itself, allowing different AI tools, IDEs, and environments to continue working from the same trusted information.
+
+It does not prescribe one model, toolchain, or development methodology, nor does it try to make every personal workbench identical. It provides a minimal common foundation on which each developer can assemble their own AI development platform while keeping project knowledge durable, collaboration seamless across tools and sessions, capability state traceable, and delivery verifiable.
+
 It does not replace project documentation, development methodology, or human decision-making. It solves exactly five problems:
 
 - Keeping project facts in the project instead of writing them into global skills
@@ -126,6 +136,8 @@ python scripts/init_project_os.py --target <project-root>
 ```
 
 Complete the verified project facts in `docs/ai/project.json`, review task routes in `docs/ai/routes.json`, and keep only behavior-changing failures or corrections in `docs/ai/memory.json`.
+
+After initialization, start the AI in the project and state the task normally. Compatible agents automatically apply the project protocol; explicit `$ai-project-os` invocation is only a fallback when automatic instruction loading is unavailable.
 
 Validate a target project:
 

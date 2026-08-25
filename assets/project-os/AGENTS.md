@@ -2,6 +2,8 @@
 
 This repository uses a small project-local collaboration layer.
 
+This protocol applies automatically to every task performed in this repository. The user does not need to invoke `$ai-project-os` explicitly.
+
 ## Start here
 
 1. Read `.agents/skills/project-memory/SKILL.md`.

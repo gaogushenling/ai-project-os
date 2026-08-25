@@ -22,6 +22,8 @@ There is only one question for adding a feature: does it help AI understand the 
 
 ## Entering a project
 
+For every task performed inside an initialized project, apply this protocol automatically; do not require the user to invoke `$ai-project-os` explicitly.
+
 1. Read the project's `AGENTS.md`.
 2. Read `.agents/skills/project-memory/SKILL.md` when it exists.
 3. Match the request against `docs/ai/routes.json`.
