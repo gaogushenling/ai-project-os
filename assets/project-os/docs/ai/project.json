@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "{{project_name}}",
+    "summary": "TODO: describe the product and its users",
+    "owners": []
+  },
+  "fact_sources": {
+    "requirements": [],
+    "engineering_rules": ["AGENTS.md"],
+    "operations": []
+  },
+  "repositories": [
+    {
+      "path": ".",
+      "role": "primary"
+    }
+  ],
+  "commands": {
+    "install": "TODO",
+    "dev": "TODO",
+    "test": "TODO",
+    "lint": "TODO",
+    "build": "TODO"
+  },
+  "quality_gates": ["TODO: define the minimum verification for delivery"],
+  "confirm_before": [
+    "production changes",
+    "destructive data operations",
+    "credential or secret handling"
+  ]
+}

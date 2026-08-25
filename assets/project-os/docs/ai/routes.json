@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "default": {
+    "read": ["docs/ai/project.json"]
+  },
+  "routes": {
+    "understand": {
+      "signals": ["explain", "status", "architecture", "how it works", "理解", "现状", "架构"],
+      "read": ["docs/ai/project.json"]
+    },
+    "develop": {
+      "signals": ["build", "implement", "fix", "refactor", "开发", "实现", "修复", "重构"],
+      "read": ["docs/ai/project.json", "docs/ai/memory.json"],
+      "gates": [
+        "define_user_outcome",
+        "define_minimum_complete_scope",
+        "check_relevant_product_risks",
+        "define_acceptance_evidence"
+      ]
+    },
+    "review": {
+      "signals": ["review", "audit", "审查", "检查"],
+      "read": ["docs/ai/project.json", "docs/ai/memory.json"]
+    },
+    "verify": {
+      "signals": ["test", "validate", "acceptance", "测试", "验证", "验收"],
+      "read": ["docs/ai/project.json", "docs/ai/memory.json"],
+      "gates": ["engineering_verification", "user_flow_acceptance"]
+    },
+    "operate": {
+      "signals": ["deploy", "release", "database", "部署", "发布", "数据库"],
+      "read": ["docs/ai/project.json", "docs/ai/memory.json"],
+      "requires_confirmation": true
+    }
+  }
+}

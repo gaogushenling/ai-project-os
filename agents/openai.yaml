@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Project OS"
+  short_description: "Lightweight project memory and task routing."
+  default_prompt: "请使用 $ai-project-os，从用户结果和最小完整范围出发，按项目路由加载必要上下文并在交付前完成对应验收。"

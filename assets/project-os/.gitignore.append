@@ -1,0 +1,6 @@
+# AI Project OS: local-only files
+.codex/local/
+.env
+.env.*
+!.env.example
+*.local.json
