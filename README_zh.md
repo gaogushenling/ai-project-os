@@ -186,6 +186,10 @@ tests/        行为测试
 
 文档采用双语维护，英文为默认版本；中文译本以 `*_zh.md` 文件随附（`README_zh.md`、`SKILL_zh.md`、`references/recommended-integrations_zh.md`）。
 
+## 社区
+
+本项目在 [LINUX DO](https://linux.do) 社区开源推广。
+
 ## Star History
 
 <a href="https://www.star-history.com/?repos=gaogushenling%2Fai-project-os&type=date&legend=top-left">
