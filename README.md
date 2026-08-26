@@ -196,6 +196,10 @@ Documentation is bilingual with English as the default; Chinese translations liv
   </picture>
 </a>
 
+## 社区
+
+本项目在 [LINUX DO](https://linux.do) 社区开源推广。
+
 ## License
 
 Apache-2.0
