@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-"""Initialize the minimal AI Project OS layer in a repository.
+"""Initialize the minimal AI Project OS layer at a project or workspace root.
 
 Template and protocol files can be refreshed with --force. Project data
 files under docs/ai (facts, memory, capability manifest and lock) are
 never overwritten once they exist; resetting them requires deleting them
 first.
+
+Reuse an existing ancestor layer by default. A separate child layer requires
+an explicit --allow-nested choice; --force does not bypass this boundary.
+
+This script only generates files: it does not create a Git repository or
+stage, commit, or push changes. Complete adoption also verifies Git ownership
+and records the reviewed collaboration layer in version history.
 """
 
 from __future__ import annotations
@@ -72,6 +79,17 @@ def asset_files() -> list[Path]:
     return sorted(files)
 
 
+def find_ancestor_layer(target: Path) -> Path | None:
+    """Find the nearest existing layer, including across nested Git roots."""
+    for ancestor in target.parents:
+        if all(
+            (ancestor / relative).is_file()
+            for relative in ("docs/ai/project.json", "docs/ai/routes.json")
+        ):
+            return ancestor
+    return None
+
+
 def update_gitignore(target: Path, *, dry_run: bool) -> str:
     assert_safe_asset(GITIGNORE_ASSET)
     block = GITIGNORE_ASSET.read_text(encoding="utf-8").strip() + "\n"
@@ -92,9 +110,18 @@ def initialize(
     date: str,
     force: bool = False,
     dry_run: bool = False,
+    allow_nested: bool = False,
 ) -> list[tuple[str, str]]:
     date = normalize_date(date)
     resolved = target.resolve()
+    ancestor = find_ancestor_layer(resolved)
+    if ancestor is not None and not allow_nested:
+        raise ValueError(
+            f"AI Project OS already exists at ancestor root: {ancestor}. "
+            "Reuse that workspace layer instead of initializing another copy here. "
+            "Use --allow-nested only when an independent child layer has been "
+            "explicitly chosen; --force does not bypass this check."
+        )
     results: list[tuple[str, str]] = []
     for source in asset_files():
         relative = render_path(source.relative_to(ASSET_ROOT), date)
@@ -122,7 +149,7 @@ def initialize(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", default=".", help="Target repository root")
+    parser.add_argument("--target", default=".", help="Target project or workspace root")
     parser.add_argument(
         "--date",
         default=dt.date.today().isoformat(),
@@ -131,10 +158,24 @@ def main() -> int:
     )
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
     parser.add_argument("--force", action="store_true", help="Overwrite generated files")
+    parser.add_argument(
+        "--allow-nested",
+        action="store_true",
+        help="Explicitly create an independent layer below an existing workspace layer",
+    )
     args = parser.parse_args()
 
     target = Path(args.target)
-    results = initialize(target, date=args.date, force=args.force, dry_run=args.dry_run)
+    try:
+        results = initialize(
+            target,
+            date=args.date,
+            force=args.force,
+            dry_run=args.dry_run,
+            allow_nested=args.allow_nested,
+        )
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     mode = "DRY RUN" if args.dry_run else "INITIALIZED"
     print(f"AI Project OS {mode}: {target.resolve()}")
     for action, relative in results:

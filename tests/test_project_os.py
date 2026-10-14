@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -114,6 +115,195 @@ class ProjectOsTests(unittest.TestCase):
             self.assertIn("docs/ai/project.json", result.stdout)
             self.assertNotIn("docs\\ai\\project.json", result.stdout)
             self.assertFalse(target.exists())
+
+    def test_prepares_parent_workspace_files_without_initializing_git(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp) / "product-workspace"
+            child_paths = []
+            for name in ("api", "web"):
+                child = workspace / name
+                (child / ".git").mkdir(parents=True)
+                (child / "README.md").write_text(f"{name} project\n", encoding="utf-8")
+                child_paths.append(f"{name}/README.md")
+
+            self.init(workspace)
+            self.assertFalse((workspace / ".git").exists())
+            route_path = workspace / "docs/ai/routes.json"
+            routes = json.loads(route_path.read_text(encoding="utf-8"))
+            routes["routes"]["develop"]["read"].extend(child_paths)
+            route_path.write_text(json.dumps(routes), encoding="utf-8")
+
+            result = self.run_script(
+                VALIDATE_SCRIPT, "--target", str(workspace), "--format", "json"
+            )
+            payload = json.loads(result.stdout)
+            self.assertEqual("pass", payload["status"])
+            self.assertEqual(0, payload["summary"]["errors"])
+            for name in ("api", "web"):
+                self.assertFalse((workspace / name / "docs/ai").exists())
+                self.assertFalse((workspace / name / "AGENTS.md").exists())
+
+            # Re-running the workspace itself is not a nested initialization.
+            replay = self.init(workspace)
+            self.assertIn("INITIALIZED", replay.stdout)
+            self.assertEqual(routes, json.loads(route_path.read_text(encoding="utf-8")))
+
+    def test_parent_git_versions_shared_layer_without_tracking_child_code(self) -> None:
+        git_binary = shutil.which("git")
+        if git_binary is None:
+            self.skipTest("Git is unavailable")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp) / "product-workspace"
+            workspace.mkdir()
+
+            def git(root: Path, *args: str) -> str:
+                result = subprocess.run(
+                    [git_binary, "-C", str(root), *args],
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True,
+                )
+                return result.stdout.strip()
+
+            git(workspace, "init", "--quiet")
+            for name in ("api", "web"):
+                child = workspace / name
+                child.mkdir()
+                git(child, "init", "--quiet")
+                (child / "README.md").write_text(f"{name} project\n", encoding="utf-8")
+                git(child, "add", "--", "README.md")
+                git(
+                    child,
+                    "-c", "user.name=Project OS Test",
+                    "-c", "user.email=project-os-test@example.invalid",
+                    "-c", "commit.gpgSign=false",
+                    "commit", "--quiet", "--no-verify", "-m", "Test fixture",
+                )
+
+            self.init(workspace)
+            gitignore = workspace / ".gitignore"
+            with gitignore.open("a", encoding="utf-8") as stream:
+                stream.write("/api/\n/web/\n")
+            route_path = workspace / "docs/ai/routes.json"
+            routes = json.loads(route_path.read_text(encoding="utf-8"))
+            routes["routes"]["develop"]["read"].extend(
+                ["api/README.md", "web/README.md"]
+            )
+            route_path.write_text(json.dumps(routes), encoding="utf-8")
+            git(
+                workspace, "add", "--", ".gitignore", "AGENTS.md",
+                ".agents/skills/project-memory", "docs/ai",
+            )
+
+            staged = git(workspace, "ls-files", "--stage").splitlines()
+            self.assertTrue(staged)
+            self.assertTrue(all(line.startswith("100644 ") for line in staged))
+            tracked = git(workspace, "ls-files").splitlines()
+            self.assertIn("docs/ai/project.json", tracked)
+            self.assertFalse(any(path.startswith(("api/", "web/")) for path in tracked))
+            child_revisions = {
+                name: git(workspace / name, "rev-parse", "HEAD")
+                for name in ("api", "web")
+            }
+            git(
+                workspace,
+                "-c", "user.name=Project OS Test",
+                "-c", "user.email=project-os-test@example.invalid",
+                "-c", "commit.gpgSign=false",
+                "commit", "--quiet", "--no-verify", "-m", "Record shared collaboration layer",
+            )
+            self.assertEqual(
+                "Record shared collaboration layer",
+                git(workspace, "log", "-1", "--format=%s", "--", "docs/ai/project.json"),
+            )
+            for name in ("api", "web"):
+                child = workspace / name
+                self.assertEqual(child_revisions[name], git(child, "rev-parse", "HEAD"))
+                self.assertEqual(f"{name}/README.md", git(workspace, "check-ignore", "--", f"{name}/README.md"))
+                self.assertEqual("README.md", git(child, "ls-files"))
+                self.assertEqual(workspace.resolve(), Path(git(workspace, "rev-parse", "--show-toplevel")).resolve())
+                self.assertEqual(child.resolve(), Path(git(child, "rev-parse", "--show-toplevel")).resolve())
+
+            result = self.run_script(
+                VALIDATE_SCRIPT, "--target", str(workspace), "--format", "json"
+            )
+            payload = json.loads(result.stdout)
+            self.assertEqual("pass", payload["status"])
+            self.assertEqual(0, payload["summary"]["errors"])
+
+    def test_initializer_rejects_nested_layers_before_writing_even_with_force(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp) / "product-workspace"
+            self.init(workspace)
+            child = workspace / "api"
+            (child / ".git").mkdir(parents=True)
+            (child / "README.md").write_text("existing project\n", encoding="utf-8")
+
+            def snapshot():
+                return {
+                    path.relative_to(workspace).as_posix(): (
+                        path.read_bytes() if path.is_file() else None
+                    )
+                    for path in workspace.rglob("*")
+                }
+
+            before = snapshot()
+            for target in (child, child / "new-directory"):
+                for flags in ((), ("--dry-run",), ("--force",), ("--force", "--dry-run")):
+                    with self.subTest(target=target, flags=flags):
+                        result = self.run_script(
+                            INIT_SCRIPT,
+                            "--target",
+                            str(target),
+                            "--date",
+                            "2026-08-25",
+                            *flags,
+                            check=False,
+                        )
+                        self.assertNotEqual(0, result.returncode)
+                        self.assertIn(str(workspace.resolve()), result.stderr)
+                        self.assertIn("Reuse that workspace layer", result.stderr)
+                        self.assertIn("--allow-nested", result.stderr)
+                        self.assertNotIn("Traceback", result.stderr)
+                        self.assertEqual(before, snapshot())
+
+    def test_initializer_requires_explicit_nested_override_in_api_and_cli(self) -> None:
+        module = load_module(INIT_SCRIPT, "init_project_os_nested")
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp) / "product-workspace"
+            self.init(workspace)
+            child = workspace / "independent-project"
+            parent_facts = (workspace / "docs/ai/project.json").read_bytes()
+            for flags in ({}, {"force": True}, {"dry_run": True}):
+                with self.subTest(flags=flags):
+                    with self.assertRaisesRegex(ValueError, "ancestor root"):
+                        module.initialize(child, date="2026-08-25", **flags)
+                    self.assertFalse(child.exists())
+
+            preview = module.initialize(
+                child, date="2026-08-25", dry_run=True, allow_nested=True
+            )
+            self.assertIn(("created", "docs/ai/project.json"), preview)
+            self.assertFalse(child.exists())
+
+            initialized = self.init(child, "--allow-nested")
+            self.assertIn("INITIALIZED", initialized.stdout)
+            self.assertTrue((child / "docs/ai/project.json").is_file())
+            self.assertEqual(parent_facts, (workspace / "docs/ai/project.json").read_bytes())
+
+    def test_partial_ancestor_data_does_not_count_as_an_initialized_layer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp) / "ordinary-directory"
+            partial = workspace / "docs/ai/project.json"
+            partial.parent.mkdir(parents=True)
+            partial.write_text("{}\n", encoding="utf-8")
+            child = workspace / "actual-project"
+
+            result = self.init(child)
+            self.assertIn("INITIALIZED", result.stdout)
+            self.assertEqual("{}\n", partial.read_text(encoding="utf-8"))
 
     def test_existing_files_are_preserved_and_state_files_survive_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

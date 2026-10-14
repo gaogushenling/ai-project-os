@@ -24,15 +24,15 @@ There is only one question for adding a feature: does it help AI understand the 
 
 For every task performed inside an initialized project, apply this protocol automatically; do not require the user to invoke `$ai-project-os` explicitly.
 
-1. Read the project's `AGENTS.md`.
-2. Read `.agents/skills/project-memory/SKILL.md` when it exists.
+1. Identify the active collaboration root: reuse a covering workspace layer rather than equating every Git root with a project. Read its `AGENTS.md` and the applicable repository-native instructions.
+2. Read `.agents/skills/project-memory/SKILL.md` at that collaboration root when it exists; resolve memory and route paths from that root, not the shell's current directory.
 3. Match the request against `docs/ai/routes.json`.
 4. Load only the files listed by the matching route.
 5. Current user instructions, code, tests, and project-native rules take precedence over memory entries.
 
 Do not load all project memory files by default; progressive loading is the primary context control.
 
-The generated `AGENTS.md` follows the project-level instruction file convention (introduced by OpenAI Codex, supported by GitHub Copilot and others): the instruction file lives at the repository root. The layer is scoped as `AGENTS.md` (project agreement) → `.agents/skills/project-memory/SKILL.md` (loading entry) → `docs/ai/` (facts).
+The layer is scoped as `AGENTS.md` (project agreement) → `.agents/skills/project-memory/SKILL.md` (loading entry) → `docs/ai/` (facts). Its root may be one repository or a parent workspace containing several repositories for one product; Git roots remain code/version boundaries.
 
 ## Advising adoption
 
@@ -40,16 +40,20 @@ When a user gives you this repository and asks how to use or adopt it:
 
 1. Read `docs/getting-started.md` (or `docs/getting-started_zh.md` for Chinese).
 2. Inspect the target read-only before recommending or writing anything.
-3. Identify the Git roots, existing instructions, initialized project layers, and repository boundaries.
-4. Recommend the smallest suitable initialization scope and explain fact ownership, generated files, limitations, and rollback.
+3. Identify Git roots, existing instructions, layers in ancestors and relevant children, and the product boundary. For one product with multiple repositories under a common parent, use one layer versioned in that parent's own Git repository. Reuse existing parent Git or include establishing it in the confirmed adoption plan. Unrelated products need separate scopes.
+4. Reuse a covering layer; do not initialize every child Git repository. Recommend the smallest suitable initialization scope and explain fact ownership, generated files, limitations, and rollback. Keep repository facts task-routed, commands explicit about their repository working directory, and Git operations inside the owning repository.
 5. Decide safe reversible details from evidence; ask the user only about choices that materially change the target, authority boundary, Git organization, or overwrite behavior.
-6. Run `--dry-run` before initialization, then validate the applied result.
+6. Run `--dry-run` before initialization, then validate the applied result, its own Git root, and version history. File generation or an empty Git repository is only preparation. Record the reviewed layer as a local commit according to the project workflow; report uncommitted records as pending. An existing user request to establish parent Git is sufficient authorization within its confirmed scope.
 
-Never restructure repositories, overwrite existing instructions, enable optional capabilities, or commit secrets and absolute local paths as an implicit part of adoption.
+Never restructure repositories, overwrite existing instructions, enable optional capabilities, or commit secrets and absolute local paths as an implicit part of adoption. Existing child layers need backup, fact/path/command reconciliation, and parent validation before any removal; see the getting-started guide.
+
+Open the AI at the parent workspace for shared-layer use. A session started at a child Git root may not discover parent instructions, skills, or MCP configuration; explicitly load the parent entry or use a user-chosen thin pointer instead of duplicating the layer. Tool configuration still needs its own discovery and trust checks.
+
+Parent Git owns the shared layer and selected workspace documents; code stays in each child Git repository. Inspect the parent index, exclude independent children with root-anchored ignores, and stage only confirmed files. Ignores do not untrack existing content. Do not add accidental child Git links, assume child revisions are pinned, or configure remotes/push without the corresponding request.
 
 ## Initialization
 
-Dry-run before writing into an existing project:
+Resolve every `scripts/...` command from this skill kit's directory, not the target or current shell directory. Pass the confirmed collaboration root as `--target`; when running elsewhere use resolved script and target paths. Dry-run before writing into an existing project:
 
 ```powershell
 python scripts/init_project_os.py --target <project-root> --dry-run
@@ -61,7 +65,9 @@ Then apply; existing files are not overwritten by default:
 python scripts/init_project_os.py --target <project-root>
 ```
 
-`--force` only refreshes template and protocol files; the filled state files under `docs/ai/` (project facts, memory, capability manifest, and lock) are never overwritten — delete them manually to reset.
+The initializer only prepares layer files; it does not initialize Git, stage, commit, or push. Establish and verify the root's Git ownership as part of adoption. `--force` only refreshes template and protocol files; filled state files under `docs/ai/` are never overwritten — delete them manually to reset.
+
+The initializer refuses a second layer below an existing ancestor layer, including during dry-run and with `--force`. Use `--allow-nested` only for an explicitly chosen independent project; it does not merge or migrate layers. Route targets must remain inside the collaboration root after path resolution.
 
 ## Project memory contract
 
@@ -78,7 +84,7 @@ Memory is tightly coupled to code: after the code, tests, or approach a record d
 
 ## Conflict handling
 
-When context, documentation, or code conflicts, check recency first; do not assume a contradiction by default. Use git to judge which side is newer: query each side's last change (`git log -1 --format=%cs -- <path>`), treating uncommitted local changes as newest; `verified_at` in `docs/ai/memory.json` judges how new a memory entry itself is.
+When context, documentation, or code conflicts, check recency first; do not assume a contradiction by default. Query each tracked source's last change in its owning Git repository (`git log -1 --format=%cs -- <repo-relative-path>`), treating uncommitted local changes as newest; `verified_at` judges memory recency. For untracked or preparation-stage files, use verified source dates or report unknown recency rather than inventing Git evidence.
 
 1. Prefer the newer document: the newer side usually represents the current approach; the older side is not a second, parallel truth.
 2. Re-review the older document: constraints, boundaries, and notes that remain valid may have been dropped during a switch; restore them into the newer document instead of discarding them wholesale.

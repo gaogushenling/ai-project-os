@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Validate an initialized AI Project OS layer."""
+"""Validate AI Project OS layer data.
+
+Git ownership, tracking, and commit history are separate adoption checks;
+a data-validation pass alone does not establish versioned records.
+"""
 
 from __future__ import annotations
 
@@ -487,7 +491,7 @@ def validate(target: Path) -> list[Finding]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", default=".", help="Target repository root")
+    parser.add_argument("--target", default=".", help="Collaboration root (repository or product workspace)")
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failure")
     args = parser.parse_args()

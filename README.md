@@ -22,7 +22,7 @@ It does not replace project documentation, development methodology, or human dec
 - Keeping an explicit confirmation boundary for high-risk operations
 - Verifying with executable checks that the collaboration layer has not broken
 
-The generated `AGENTS.md` follows the project-level instruction file convention introduced by OpenAI Codex ([official docs](https://developers.openai.com/codex/agents-md)) and [supported by GitHub Copilot](https://github.blog/changelog/2026-06-23-copilot-coding-agent-now-supports-agents-md-custom-instructions/): the instruction file lives at the repository root. This collaboration layer extends it with routing, memory, capability manifests, and executable validation. Instructions are layered by scope: `AGENTS.md` → `.agents/skills/project-memory` → `docs/ai/`.
+The generated `AGENTS.md` follows the project-level instruction file convention introduced by OpenAI Codex ([official docs](https://developers.openai.com/codex/agents-md)) and [supported by GitHub Copilot](https://github.blog/changelog/2026-06-23-copilot-coding-agent-now-supports-agents-md-custom-instructions/). This layer lives at the chosen collaboration root: a standalone repository or the parent workspace of one product's repositories. It adds routing, memory, capability manifests, and executable validation, layered as `AGENTS.md` → `.agents/skills/project-memory` → `docs/ai/`.
 
 ## First principles
 
@@ -61,6 +61,14 @@ docs/ai/logs/YYYY-MM-DD.md
 ```
 
 Only 8 core entry points. Structured data is standard JSON; the scripts depend only on the Python standard library and require Python 3.11+ (CI verifies 3.11–3.13).
+
+## One product, one collaboration layer
+
+For a product with several repositories under a common parent, initialize that parent once and version the shared layer in the parent's own Git repository. Reuse existing parent Git or include establishing it in the confirmed adoption plan. Child repositories keep their code, native rules, commands, and Git histories; exclude their directories from the parent's index and route to their facts as needed. Unrelated products still use separate layers.
+
+Open the AI at the parent workspace, resolve route paths from that root, and execute commands in the declared child working directory. Child-only sessions may need explicit loading of the parent entry; automatic discovery of parent instructions, skills, and MCP configuration is tool-dependent. Parent Git records collaboration changes; it does not automatically pin child revisions. File generation without Git is preparation, not completed adoption.
+
+The initializer rejects a new child layer when an ancestor layer exists; `--force` cannot bypass this. `--allow-nested` is reserved for an explicitly chosen independent project. Existing duplicate layers need consolidation that preserves their facts and memories, not automatic deletion. See [scope selection and consolidation](./docs/getting-started.md#choose-the-project-root).
 
 ## Optional capability recommendations
 
@@ -123,6 +131,8 @@ The repository-level `AGENTS.md` tells compatible coding agents how to inspect t
 
 ### Manual quick start
 
+Run these scripts from the kit checkout. Complete adoption requires the target's own Git repository and a reviewed collaboration-layer commit; the initializer only generates files. For a parent workspace, exclude independent child repositories before staging. Follow the [Git recording workflow](./docs/getting-started.md#multi-repository-workspace).
+
 Dry-run before writing:
 
 ```powershell
@@ -137,7 +147,7 @@ python scripts/init_project_os.py --target <project-root>
 
 Complete the verified project facts in `docs/ai/project.json`, review task routes in `docs/ai/routes.json`, and keep only behavior-changing failures or corrections in `docs/ai/memory.json`.
 
-After initialization, start the AI in the project and state the task normally. Compatible agents automatically apply the project protocol; explicit `$ai-project-os` invocation is only a fallback when automatic instruction loading is unavailable.
+After initialization, start the AI at the collaboration root (the parent for a shared workspace) and state the task normally. Once the entry is loaded, compatible agents automatically apply the project protocol; explicit `$ai-project-os` invocation is a fallback when automatic instruction loading is unavailable.
 
 Validate a target project:
 

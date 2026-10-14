@@ -22,7 +22,7 @@ AI Project OS 的初衷，是为个人 AI 开发工作台提供一个轻量、�
 - 对高风险操作保留明确的确认边界
 - 用可执行校验保证协作层没有失效
 
-生成的 `AGENTS.md` 沿用项目级指令文件约定：该约定由 OpenAI Codex 引入（[官方文档](https://developers.openai.com/codex/agents-md)），[GitHub Copilot 也已支持](https://github.blog/changelog/2026-06-23-copilot-coding-agent-now-supports-agents-md-custom-instructions/)——指令文件放在仓库根目录。本协作层在此之上扩展出路由、记忆、能力清单与可执行校验，指令按作用域分层：`AGENTS.md` → `.agents/skills/project-memory` → `docs/ai/`。
+生成的 `AGENTS.md` 沿用项目级指令文件约定：该约定由 OpenAI Codex 引入（[官方文档](https://developers.openai.com/codex/agents-md)），[GitHub Copilot 也已支持](https://github.blog/changelog/2026-06-23-copilot-coding-agent-now-supports-agents-md-custom-instructions/)。协作层放在选定的根目录：独立仓库，或同一产品多个仓库的父工作区。本层扩展出路由、记忆、能力清单与可执行校验，按作用域分层：`AGENTS.md` → `.agents/skills/project-memory` → `docs/ai/`。
 
 ## 第一原理
 
@@ -61,6 +61,14 @@ docs/ai/logs/YYYY-MM-DD.md
 ```
 
 只有 8 个核心入口。结构化数据使用标准 JSON，脚本只依赖 Python 标准库；需要 Python 3.11 及以上（CI 在 3.11–3.13 上验证）。
+
+## 一个产品，一份协作层
+
+同一产品的多个仓库位于共同父目录时，只初始化该父目录一份，并由父目录自己的 Git 仓库记录共享层。已有父 Git 就复用；没有则将建立父 Git 纳入已确认的接入计划。子仓库保留代码、原生规则、命令和独立 Git 历史，其目录从父 Git 索引中排除，共享层按需路由到它们的事实。无关产品仍使用独立层。
+
+日常在父工作区启动 AI，路由路径相对父层根目录解析，命令在声明的子仓库目录执行。仅从子仓库启动时可能需要显式加载父入口；父级指令、Skill 和 MCP 配置是否自动发现取决于工具。父 Git 记录协作变更，不会自动锁定子仓版本；没有 Git 时生成文件只算准备阶段，不算完整接入。
+
+祖先已有协作层时，初始化器拒绝再创建子层，`--force` 也不能绕过。`--allow-nested` 仅供用户明确选择独立项目时使用。已有重复层应保留事实和记忆后再合并，不自动删除。详见[范围选择与合并流程](./docs/getting-started_zh.md#选择项目根目录)。
 
 ## 可选能力推荐
 
@@ -123,6 +131,8 @@ Source-Available 项目还必须使用 `--accept-license <准确协议名称>` �
 
 ### 手动快速接入
 
+这些脚本从本工具仓库运行。完整接入要求目标根目录有自己的 Git 仓库，并为核对后的协作层形成提交；初始化器只生成文件。父工作区暂存前应排除独立子仓库，按[Git 记录流程](./docs/getting-started_zh.md#多仓库工作区)执行。
+
 写入前先预演：
 
 ```powershell
@@ -137,7 +147,7 @@ python scripts/init_project_os.py --target <project-root>
 
 在 `docs/ai/project.json` 中补全经过核实的项目事实，检查 `docs/ai/routes.json` 中的任务路由，并且只把会改变未来执行方式的失败或纠偏写入 `docs/ai/memory.json`。
 
-初始化后，在项目中启动 AI 并直接描述任务。兼容的 Agent 会自动应用项目协议；只有工具无法自动加载项目指令时，才需要显式调用 `$ai-project-os` 作为兜底。
+初始化后，在协作层根目录启动 AI（共享工作区使用父目录）并直接描述任务。入口加载后，兼容的 Agent 会自动应用项目协议；工具无法自动加载项目指令时，可以显式调用 `$ai-project-os` 作为兜底。
 
 校验目标项目：
 
